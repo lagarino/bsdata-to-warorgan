@@ -16,14 +16,14 @@ Status column: **OK** = representable as is, **WORK** = representable but needs 
 | `Override points limit?` (>=500, step 250) | none needed | OK | The app maps any points limit to the first battle size with `PointsTotal` >= limit |
 | `sharedRules` (Sustained Hits, Anti, ...) | `WeaponAbilities` / `CoreAbilities` regexes | WORK | Convert names with numbers into regexes with a `value` group; one regex must exist for **every** keyword string used in data, see validation notes |
 | Category entries used as roles (Character, Battleline, ...) | `CategoryKeywords` | OK | Must occur on a unit keyword |
-| Force Disposition group | `Features: Dispositions`, `Detachment.ForceDispositions` | ? | Contents not extracted yet |
+| Force Disposition group | `Features: Dispositions`, `Detachment.ForceDispositions` | OK | Five options (Disruption, Priority Assets, Purge the Foe, Take and Hold, Reconnaissance), shown when a selected detachment carries the category. Display-only in the app. See [08-phase1-findings](08-phase1-findings.md) |
 | Stratagems | `CoreStratagems`, `Detachment.Stratagems` | n/a | Not in BSData, see [06-stratagems](06-stratagems.md) |
 
 ## Unit level
 
 | BSData | WarOrgan | Status | Notes |
 | --- | --- | --- | --- |
-| `selectionEntry type=unit` | `Unit` | OK | `Id` = stable slug of the BSData entry name (+ catalogue where names clash); keep BSData `id` in a side map for diffing, not in the dataset |
+| Root-linked `selectionEntry` of `type=unit` **or `type=model`** (a top-level model is a single-model datasheet) | `Unit` | OK | `Id` = stable slug of the BSData entry name (+ catalogue where names clash); keep BSData `id` in a side map for diffing, not in the dataset |
 | `[Legends]` suffix in name | none | OUT | Decision D8: drop these units entirely (no Legends roster, no `IsLegend`). Drop leader/option references to them |
 | `Unit` profile `M,T,Sv,W,LD,OC,InSv,Base` | `StatLine.Stats` + `BaseInfo` | WORK | `Base` text ("32mm", "170 x 105mm Oval", "Hull", "Flying base") -> `BaseInfo.Type/Size`; all values must be non-empty |
 | Multiple `Unit` profiles on a unit (models with different stats; vehicles with `Damaged`) | multiple `StatLine`s with `StatlineRef` per `ModelComposition` | OK | Each statline must be referenced or `AlwaysShow` |
@@ -40,7 +40,7 @@ Status column: **OK** = representable as is, **WORK** = representable but needs 
 | Wargear/upgrade cost | `WargearDefinition.Cost` or `UnitUpgrade` | WORK | |
 | Wargear that changes stats or grants abilities | `WargearDefinition{StatAdjustments, WeaponAdjustments, GrantsWeapons, GrantsAbilities, DatasheetAdjustments}` | WORK | Most BSData uses `annotation` text modifiers rather than structured ones - must be parsed or left as ability text |
 | Unit copy limit `selections max 3/6/1` | `BattleSizeDefinition.UnitLimit` + keywords `Battleline` / `Epic Hero` | OK, 9 exceptions | App derives 3 / 2x / 1 from keywords (G4) |
-| `Warlord` entry link and its hide conditions | `Unit.Flags` (`NotWarlord, MustBeWarlord, MayBeWarlord`) | ? | Encoding not yet mapped |
+| `Warlord` entry (offered on `Character`) plus ability text "must be your Warlord" (9) / "cannot be (selected as) your Warlord" (~11), and Titans' `Towering Example` | `Unit.Flags` (`MustBeWarlord`, `NotWarlord`, `MayBeWarlord` for Titans) | WORK | Derived from ability-text patterns; see [08-phase1-findings](08-phase1-findings.md) section 3 |
 | `associations` Leader/Support | `LeaderInfo{UnitNames, AttachableByKeyword, LeaderType}` | WORK | Resolve unit ids in conditions to unit ids. `LeaderType = null` (default Leader), `"Support"`; keyword-based leading from `instanceOf` category conditions |
 | Bodyguard association constraints / overrides | `AttachedUnitInfo.MaxLeaders[]` | WORK | |
 
@@ -50,7 +50,7 @@ Status column: **OK** = representable as is, **WORK** = representable but needs 
 | --- | --- | --- | --- |
 | `Detachment` group children | `FactionRoster.Detachments[]` | WORK | Detachments may exist in several catalogues (generic vs chapter) |
 | Detachment `Detachment Points` cost (1-3) | `Detachment.Cost` | OK | |
-| Detachment `categoryLinks` (Take and Hold, Purge the Foe, 3DP Detachment) | `Detachment.Tags` | OK | |
+| Detachment `categoryLinks`: the five dispositions | `Detachment.ForceDispositions` | OK | **Not** `Tags`: in the app, tags are mutual-exclusion categories and BSData has no such rule. Leave `Tags` empty. `3DP Detachment` is only a marker (drives `Cost` 3) and the few detachment-specific categories (Terminator Detachment, ...) are dropped |
 | Detachment `rules` | `Detachment.Rule` (single) | GAP G5 | Merge multiple rules into one text |
 | Detachment effect expressed as modifier groups on units | `Detachment.Effects[DetachmentEffect]` | WORK | **Inverse of how BSData stores it.** For each detachment, scan every unit's modifier groups conditioned on that detachment; collapse units sharing the same effect into one `DetachmentEffect.AffectedUnits` list; or use `AffectedUnitsByKeyword` when it matches a keyword (BOYZ, ORKS INFANTRY) |
 | Detachment-conditioned points | `DetachmentEffect.PointsOverride` | WORK | |
@@ -59,7 +59,7 @@ Status column: **OK** = representable as is, **WORK** = representable but needs 
 | Enhancement group per detachment | `Detachment.Enhancements[]` | WORK | `Cost` from `pts`; restrictions from hide-modifiers -> `RequiredUnitNames/RequiredKeywords/ExcludedKeywords/...` |
 | Enhancement copy limit (max 3, count once) | `EnhancementFeature.Upgrade` | OK | Flag the ~84 entries with the max-3 + divide pattern (G2 solved) |
 | Enhancement effects (stat, weapon, keywords, abilities) | `StatAdjustments`, `WeaponStatAdjustments`, `DatasheetAdjustments`, `AddedWeapons` | WORK | Often only prose + annotation modifiers in BSData |
-| Faction/army rules (`rules` on catalogue, army-rule entries) | `FactionRoster.ArmyRules[]`, `Unit.ArmyEffects[]` | ? | Need to find where e.g. Waaagh!, Oath of Moment live |
+| Army rules: rules linked by `infoLink` from (nearly) every unit, plus catalogue-root `rules` | `FactionRoster.ArmyRules[]` | WORK | Heuristic: rules linked from at least ~half of the faction's units, plus root `rules`; rules linked only from entries inside the `Detachment` group are detachment rules. See [08-phase1-findings](08-phase1-findings.md) section 4 |
 
 ## Things that disappear because of scope
 

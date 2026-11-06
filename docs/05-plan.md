@@ -18,7 +18,7 @@ live in small curated files next to the converter and are merged in.
       flag for the max-3 + divide enhancements; keywords `Epic Hero`, `Battleline`, `Dedicated Transport` exact;
       `Detachment.Tags` only for exclusive categories (verify against BSData rule text).
 
-## Phase 1 - Finish the analysis  (small, do before writing the converter)
+## Phase 1 - Finish the analysis  (DONE, see [08-phase1-findings](08-phase1-findings.md))
 
 Close the "open data questions" in [01-source-data](01-source-data.md):
 
@@ -34,7 +34,7 @@ Close the "open data questions" in [01-source-data](01-source-data.md):
 9. Check all keywords in use: collect the distinct weapon keyword strings and core ability strings (needed
    for the regex lists in `DataSetDefinition`).
 
-Deliverable: updates to `01-source-data.md` and `04-gaps.md`; new gaps recorded with evidence.
+Deliverable (delivered): [08-phase1-findings](08-phase1-findings.md), updates to the mapping and gap docs, and `tools/analysis/p1_*.py`. The open items that remain are listed in section 10 of that document.
 
 ## Phase 2 - Stratagem source  (parallel with phase 1)
 
@@ -72,6 +72,26 @@ enumerates the scenarios that matter:
   (`RequiredDetachment`).
 
 Anything the evaluator cannot interpret goes to the report as "unconverted modifier", never silently dropped.
+
+**Pipeline stages implied by phase 1** (details in [08-phase1-findings](08-phase1-findings.md)):
+
+1. **Load and index** all 48 files; build id -> node maps; resolve `entryLink`, `infoLink` and `catalogueLink` targets by id
+   (never by name; `childName` labels are stale).
+2. **Scope filter**: drop Legends/Crucible units by name, Unaligned Forces and the Legends library by file, and evaluate with
+   Boarding Actions and Crusade unselected. Drop every reference to dropped units.
+3. **Effective roster per faction**: own root links + root entries of directly linked catalogues
+   (`importRootEntries`, non-transitive); a unit is a root-linked `unit` or `model`.
+4. **Faction model**: derive `FactionInfo` entries, `AdditionalFactionKeywords` and `Allies` (primary-roster include for
+   chapters, plain allies for Knights / Agents / Titans) from the catalogue graph; chapter gating becomes an allowlist
+   `UnitIncludeRule`.
+5. **Unit extraction** with the scenario evaluator: statlines, model compositions, weapons (a `WeaponSet` per linked weapon
+   entry), wargear options, points tiers (ceilings, non-decreasing, see 07), flags (Warlord from ability text), leaders.
+6. **Keyword and core-ability normalisation** (Unicode, spelling variants, run-together keywords) and generation of the
+   `WeaponAbilities` / `CoreAbilities` regex lists from the data.
+7. **Detachment extraction**: cost, dispositions, rule text (merge several rules), enhancements (flag `Upgrade` for the max-3
+   pattern), effects by differencing unit state with and without the detachment; army rules by the link-count heuristic.
+8. **Emit, validate, report**: write the dataset, run the builder validation, produce the unconverted-modifier report and
+   (D7) the rule-compatibility report.
 `annotation` modifiers (text appended to profiles) must be recognised and turned into keyword adjustments
 where they carry rules keywords (e.g. SUSTAINED HITS 1), otherwise surfaced as ability text.
 

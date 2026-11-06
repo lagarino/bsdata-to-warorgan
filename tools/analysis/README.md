@@ -32,3 +32,22 @@ defining entries, not by use.
 Caveat: `force.py` flattens nested condition groups, so its output hides the and/or structure. The detachment-point
 cap rule (Strike Force **or** (Incursion **and** a 3DP detachment) -> 3) was confirmed by reading the raw JSON of
 `Warhammer 40,000.json` lines ~1520-1700 (constraint `95c5-effd-74f1-c8f4`).
+
+## Phase 1 scripts
+
+Import `bsd.py` (shared loader, `WH40K_SRC` env var). Run from `tools/analysis` **without `-I`** (the helper module is imported
+from the script folder; the BSData folder is a different directory) and set `PYTHONIOENCODING=utf-8` on Windows.
+
+| Script | Answers |
+| --- | --- |
+| `p1_graph.py [out.json]` | catalogue import graph (`catalogueLinks`) and who imports whom |
+| `p1_roster.py` | how each catalogue's root `entryLinks` assemble the roster (unit vs model, target files) |
+| `p1_allies.py`, `p1_effective.py [file]` | effective roster incl. imports; faction keywords per entry; list one catalogue's entries |
+| `p1_allymods.py <file> <entry>` | category/hidden modifiers that make an entry an ally |
+| `p1_chapters.py` | Space Marine chapter gating, chapter-own entries and detachments |
+| `p1_misc.py` | Force Disposition group, Warlord entry, army-rule names, rule text search |
+| `p1_detcats.py` | detachment categories, detachment constraints, army-rule attachment, Warlord ability wording |
+| `p1_weapons.py` | weapon keyword shapes, core-ability links, modifiers on weapon profiles |
+| `p1_modclasses.py` | classification of all `pts` and `hidden` modifiers by condition target |
+| `p1_ptsdetail.py` | in-scope `pts` modifiers (without Crucible/Legends) with condition targets |
+| `p1_units.py` | Space Marines army rule, enhancement-link eligibility, leader associations, full core-ability list |

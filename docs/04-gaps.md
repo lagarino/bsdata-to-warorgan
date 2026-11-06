@@ -14,6 +14,7 @@ turned out to be solved by existing app features and are kept here as a record.
 | G6 | Validator and app constraints to design around | Design notes |
 | G7 | **App rules only run for two hard-wired dataset IDs** | **New, decision needed (O7)** |
 | G8 | Faction-specific rules live in app code | **New**, cannot be expressed in a dataset |
+| G9 | Chapter-only detachments in the shared Space Marines list | **New (phase 1)**, workaround exists |
 
 ---
 
@@ -97,7 +98,7 @@ none in the dataset; mention in the dataset README or ask whether a `Unit` flag 
 - **Points tiers** are ceilings on total model count and on copy index; costs must not decrease as counts grow
   (the app sorts by cost). See [07-app-behaviour](07-app-behaviour.md) for the exact algorithm. Costs that depend on the
   *mix* of model types cannot be expressed; not yet seen in the data.
-- **`Detachment.Tags` are exclusivity categories** in the app: only emit tags the 11e rules treat as mutually exclusive.
+- **`Detachment.Tags` are mutual-exclusion categories** in the app (two detachments sharing a tag cannot both be selected). BSData detachment categories are dispositions, not exclusion groups, so `Tags` stays empty (see [08-phase1-findings](08-phase1-findings.md) section 2); the question whether the 11e rules forbid two detachments with the same disposition is open.
   To verify in the BSData rule text for `Take and Hold`, `Purge the Foe` and `3DP Detachment`.
 
 ---
@@ -137,3 +138,13 @@ only if unit IDs and names match what the code expects. Consequence: the dataset
 3. The exe reports version 1.3.0 although the repo README says 3.0+; is that expected?
 
 Nothing has been sent to the maintainer.
+
+---
+
+## G9 - Chapter-only detachments in the shared Space Marines list  [New, phase 1]
+
+**Data:** all 35 Space Marine detachments are defined in the Space Marines catalogue, including chapter-specific ones (Champions of Fenris, Angelic Inheritors, Blade of Ultramar, ...), each hidden unless the roster's primary catalogue is that chapter. Chapter catalogues add none.
+
+**App:** `GetDetachments(faction)` = the faction roster's own detachments plus those of the rosters named in `AdditionalFactionKeywords`; there is no per-detachment visibility by faction.
+
+**Workaround:** put generic detachments in the Space Marines roster, and each chapter-specific detachment only in that chapter's own roster; chapters list the Space Marines roster in `AdditionalFactionKeywords`. Needs a check that `AdditionalFactionKeywords` can name a roster that is not an ally.

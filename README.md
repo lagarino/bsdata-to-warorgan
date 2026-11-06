@@ -4,7 +4,7 @@ Work-in-progress effort to build a [WarOrgan](https://github.com/) dataset for p
 11th Edition games, converted from the community BattleScribe data in
 [BSData/wh40k-11e](https://github.com/BSData/wh40k-11e).
 
-**Status: analysis and planning complete; no converter written yet.** Nothing in this repo is a
+**Status: analysis (phases 0-2 of the plan) and planning complete; no converter written yet.** Nothing in this repo is a
 usable dataset yet.
 
 **This repo contains tooling and notes only.** The converter (C#, planned) is meant for anyone to run against their
@@ -29,6 +29,7 @@ Out: Boarding Actions, Crusade, Unbound Adversaries, Legends, Crucible character
 | [05-plan](docs/05-plan.md) | Phased plan and converter design |
 | [06-stratagems](docs/06-stratagems.md) | Stratagem source research (not started) |
 | [07-app-behaviour](docs/07-app-behaviour.md) | What the installed WarOrgan app really does (read from its code): points algorithm, limits, hard-wired dataset IDs |
+| [08-phase1-findings](docs/08-phase1-findings.md) | Phase 1 results: roster assembly, dispositions, Warlord, army rules, keywords, point/visibility modifier classes, leaders |
 | [tools/analysis](tools/analysis/README.md) | The throwaway Python scripts that produced the findings |
 
 ## Provenance of the analysis
