@@ -212,8 +212,8 @@ BSData hides optional content behind roster-level "Show ..." entries and force c
 | `Show Legends` | 389 | **Out: no Legends at all (D8).** 92 of 473 units are named `[Legends]` (about 19%); every one is dropped, together with anything that only exists for them |
 | `Show Crucible Characters` | 62 | Out (D6) |
 | `Show Imperial Agents`, `Show Imperial Knights`, `Show Chaos Knights`, `Show Titans`, Daemon god toggles (Khorne, Nurgle, Slaanesh, Tzeentch) | 48 / 23 / ... | **Ally visibility toggles.** Treated as "on": these allies are part of normal army building |
-| `Show White Dwarf content` | 28 | **Open (O10)**: units/rules published outside the main books |
-| `Show Unaligned Forces`, `Show Unaligned Fortifications` | 16 (fortifications) | Out, see below (recommended, pending confirmation, O4) |
+| `Show White Dwarf content` | 28 | **Out (D10)**: only Crusade content: `White Dwarf Battle Traits` and `White Dwarf Crusade Relics` groups in six catalogues, Crusade agendas (e.g. Leagues of Votann), Battle Honours and Crusade relics. No units |
+| `Show Unaligned Forces`, `Show Unaligned Fortifications` | 16 (fortifications) | Out (D9), see below |
 | `Show Killzone Upgrade: Shadowvaults content` | - | Out: a separate boxed-set mode |
 | Detachment-like toggles (`Shadow Legion`, `Iconoclast Fiefdom`, `Devoted of Ynnead`, `Armageddon` ...) | various | Most are detachment selections, handled by the detachment conversion; `Armageddon` is campaign content (out) |
 
@@ -232,7 +232,7 @@ Drone, Spindle Drones, The Archivist), **3 Shadowvaults entries** (Sentry Gun, S
 available without either `Show Legends` or the Shadowvaults toggle.
 
 Consequence: with Legends excluded (D8) and Shadowvaults out of scope, **Unaligned Forces contributes no units at all**.
-Recommended handling (O4): do not create an Unaligned Forces faction or ally entry, and ignore `Allies: Unaligned Forces`.
+Handling (D9, confirmed): do not create an Unaligned Forces faction or ally entry, and ignore `Allies: Unaligned Forces`.
 The 16 catalogues that import it need no special care beyond not following that link.
 
 Also: `Library - Astartes Heresy Legends.json` is a library of Legends-style content and falls under D8 as well

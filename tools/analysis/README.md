@@ -23,6 +23,7 @@ checkout**; the others `chdir` there themselves.
 | `enhcopies.py` | any | Enhancement entries by copy-limit pattern (max 1 vs max 3 + divide), basis of the `Upgrade` flag (G2) |
 | `toggles.py` | any | Roster-level toggles that hide content, plus the number of `[Legends]` units |
 | `unaligned.py` | any | Contents of `Unaligned Forces.json` |
+| `whitedwarf.py` | any | Everything hidden behind `Show White Dwarf content` (all of it is Crusade content) |
 
 Known limitations: `pts.py` and `hid.py` print only the top classes; `gs.py` truncates long rule text;
 none of them resolve `entryLinks` (links are counted as separate nodes, not followed), so unit counts are by

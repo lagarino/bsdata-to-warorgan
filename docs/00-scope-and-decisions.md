@@ -40,13 +40,13 @@ noise (e.g. all "Boarding Actions modifiers" groups on units, `Crusade modifiers
 | D6 | **Exclude `[Crucible]` characters** (was O3) | Not clearly plain 40k; roughly 100 weapon-cost modifiers |
 | D7 | **The dataset ID is a converter setting chosen by whoever runs the tool** (was O7) | The user prefers the app's hard-wired `Warhammer 40k 11th` (validation and all exports on) but does not want to commit irreversibly. So: `datasetId` is a **required** setting with no silent default; the docs explain both options (gap G7); the converter must work with either; and it must tell the user, when they pick the hard-wired ID, which of the app's name-keyed rules our output may trigger (see plan phase 3b). Switching later is cheap for the dataset itself (see [07-app-behaviour](07-app-behaviour.md) section 4) but not for lists already saved under an ID |
 | D8 | **No Legends support at all** (was O5) | 92 of 473 units and 389 modifiers are Legends-related. Drop every `[Legends]` unit, never write a `"<Name> Legends.json"` roster, drop leader/option references to dropped units, and do not set `Unit.IsLegend`. The `Library - Astartes Heresy Legends` catalogue is dropped too (to confirm) |
+| D9 | **Exclude Unaligned Forces** (was O4) | Confirmed by the user. The catalogue holds only `[Legends]` and Shadowvaults content, so nothing is left in scope. No Unaligned Forces faction, no ally entry; ignore `Allies: Unaligned Forces` and the link that 16 catalogues have to it |
+| D10 | **`Show White Dwarf content` needs no handling** (was O10) | Everything behind it is Crusade content (Battle Traits, Crusade Relics, Battle Honours, Crusade agendas); it contains no units. It is removed by the Crusade exclusion |
 
 ## Decisions still open
 
 | # | Question | Notes / leaning |
 | --- | --- | --- |
-| O4 | `Unaligned Forces` | **Recommendation: exclude, pending the user's confirmation.** They are units that belong to no faction (fortifications and a few creatures/drones) that any army may ally. In the data all of them are `[Legends]` or Shadowvaults content, so with D8 nothing is left. See [01-source-data](01-source-data.md), "Roster toggles". |
-| O10 | `Show White Dwarf content` (28 hidden-modifiers) | Units/rules from White Dwarf and similar sources. Include or exclude? Default until decided: **exclude** (not part of the core books). Needs a look at what it covers (not yet analysed). |
 | O6 | ~~App-behaviour questions~~ | **Resolved** by decompiling the installed app (the user confirmed it is the latest version): see [07-app-behaviour](07-app-behaviour.md). A few optional questions for the maintainer remain at the end of [04-gaps](04-gaps.md); nothing has been sent. |
 | O7 | ~~Dataset ID~~ | **Resolved by D7**: it is a converter setting, not a project decision. |
 | O8 | ~~Publishing the generated dataset~~ | Resolved by D5. Still worth checking upstream BSData terms for the converter, but this repo redistributes no BSData or Games Workshop content |
