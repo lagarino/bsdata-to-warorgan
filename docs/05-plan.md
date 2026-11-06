@@ -9,8 +9,14 @@ live in small curated files next to the converter and are merged in.
 - [x] Analyse source and target; write these docs.
 - [x] Create the GitHub remote (private, `lagarino/warorgan-wh40k-11e`).
 - [x] Decided: C# converter (D4), tool-only repo with local-only output (D5), no Crucible (D6).
-- [ ] Install the .NET 10 SDK (O9) and WarOrgan 3.0+ (needed to import a ZIP and to settle O6).
-- [ ] Remaining open decisions: O4, O5, O7 in [00-scope-and-decisions](00-scope-and-decisions.md).
+- [x] Install the .NET 10 SDK; read the installed app's behaviour ([07-app-behaviour](07-app-behaviour.md)).
+- [ ] Remaining open decisions: O4, O5, **O7 (dataset ID, see gap G7)** in [00-scope-and-decisions](00-scope-and-decisions.md).
+- [ ] Add a "points" section to the converter spec from [07-app-behaviour](07-app-behaviour.md): tiers are ceilings
+      (`ModelCount`, `UnitCount`), sorted by cost, so the emitter must produce **non-decreasing** costs and the evaluator
+      must emit `ModelCount = upper bound of each cost run`.
+- [ ] Conversion rules fixed by app facts: `UnitLimit` 3; battle sizes 2/3/4 DP and 2/4/4 enhancements; `Upgrade`
+      flag for the max-3 + divide enhancements; keywords `Epic Hero`, `Battleline`, `Dedicated Transport` exact;
+      `Detachment.Tags` only for exclusive categories (verify against BSData rule text).
 
 ## Phase 1 - Finish the analysis  (small, do before writing the converter)
 

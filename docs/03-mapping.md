@@ -12,8 +12,8 @@ Status column: **OK** = representable as is, **WORK** = representable but needs 
 | Library catalogues (`Aeldari - Aeldari Library`, ...) | Units copied into each consuming faction's roster, or modelled as `Allies` with `UnitIncludeRule` | WORK | Prefer copying shared units into each roster that links the library. Which catalogues import which library is not yet mapped (`catalogueLinks` must be read) |
 | Space Marine chapters (catalogue imports Space Marines) | Ally with `IsIncludedInPrimaryRoster: true`, chapter keyword via `AdditionalFactionKeywords` / `ReplaceFactionKeywords` | WORK | Only one primary-included ally per faction |
 | `Allies: <X>` categories on the Army Roster force | `FactionInfo.Allies[]` | WORK | `ArmyPercentageRestriction`, `AllowedDetachments` need the actual ally rules (not in BSData as numbers - to source) |
-| Battle Size entries | `BattleSizeDefinitions` | OK / GAP G3 | See table in [01-source-data](01-source-data.md); `PointsTotal` must be unique; `UnitLimit` = 0 (no BSData equivalent) |
-| `Override points limit?` (>=500, step 250) | none | ? | App-level feature, probably supported in the app already (inferred) |
+| Battle Size entries | `BattleSizeDefinitions` | OK | See table in [01-source-data](01-source-data.md); `PointsTotal` must be unique; DP 2/3/4, enhancements 2/4/4, **`UnitLimit` = 3** (G3 solved, see [04-gaps](04-gaps.md)) |
+| `Override points limit?` (>=500, step 250) | none needed | OK | The app maps any points limit to the first battle size with `PointsTotal` >= limit |
 | `sharedRules` (Sustained Hits, Anti, ...) | `WeaponAbilities` / `CoreAbilities` regexes | WORK | Convert names with numbers into regexes with a `value` group; one regex must exist for **every** keyword string used in data, see validation notes |
 | Category entries used as roles (Character, Battleline, ...) | `CategoryKeywords` | OK | Must occur on a unit keyword |
 | Force Disposition group | `Features: Dispositions`, `Detachment.ForceDispositions` | ? | Contents not extracted yet |
@@ -39,7 +39,7 @@ Status column: **OK** = representable as is, **WORK** = representable but needs 
 | Per-model extra cost (model-level `pts`) | `ModelComposition.UpgradeCost` | WORK | Used for add-on models that are not part of base unit size |
 | Wargear/upgrade cost | `WargearDefinition.Cost` or `UnitUpgrade` | WORK | |
 | Wargear that changes stats or grants abilities | `WargearDefinition{StatAdjustments, WeaponAdjustments, GrantsWeapons, GrantsAbilities, DatasheetAdjustments}` | WORK | Most BSData uses `annotation` text modifiers rather than structured ones - must be parsed or left as ability text |
-| Unit copy limit `selections max 3/6/1` | none | GAP G4 | |
+| Unit copy limit `selections max 3/6/1` | `BattleSizeDefinition.UnitLimit` + keywords `Battleline` / `Epic Hero` | OK, 9 exceptions | App derives 3 / 2x / 1 from keywords (G4) |
 | `Warlord` entry link and its hide conditions | `Unit.Flags` (`NotWarlord, MustBeWarlord, MayBeWarlord`) | ? | Encoding not yet mapped |
 | `associations` Leader/Support | `LeaderInfo{UnitNames, AttachableByKeyword, LeaderType}` | WORK | Resolve unit ids in conditions to unit ids. `LeaderType = null` (default Leader), `"Support"`; keyword-based leading from `instanceOf` category conditions |
 | Bodyguard association constraints / overrides | `AttachedUnitInfo.MaxLeaders[]` | WORK | |
@@ -57,7 +57,7 @@ Status column: **OK** = representable as is, **WORK** = representable but needs 
 | Detachment-conditioned wargear options | `WargearOption.RequiredDetachment` | WORK | |
 | Detachment gating units | `Detachment.RestrictedUnits`, `Detachment.AdditionalFactionKeywords` | ? | Semantics of `RestrictedUnits` need confirming (allow-list or deny-list) |
 | Enhancement group per detachment | `Detachment.Enhancements[]` | WORK | `Cost` from `pts`; restrictions from hide-modifiers -> `RequiredUnitNames/RequiredKeywords/ExcludedKeywords/...` |
-| Enhancement copy limit (max 3, count once) | none | GAP G2 | |
+| Enhancement copy limit (max 3, count once) | `EnhancementFeature.Upgrade` | OK | Flag the ~84 entries with the max-3 + divide pattern (G2 solved) |
 | Enhancement effects (stat, weapon, keywords, abilities) | `StatAdjustments`, `WeaponStatAdjustments`, `DatasheetAdjustments`, `AddedWeapons` | WORK | Often only prose + annotation modifiers in BSData |
 | Faction/army rules (`rules` on catalogue, army-rule entries) | `FactionRoster.ArmyRules[]`, `Unit.ArmyEffects[]` | ? | Need to find where e.g. Waaagh!, Oath of Moment live |
 

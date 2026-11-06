@@ -3,10 +3,10 @@
 Read from the local clone `C:\Users\ruido\DevProjects\WarOrgan.Data` (commit
 `45f934b8efcf4c988cd2cfd124458d78f09920c7`). Namespaces are `WarOrgan.Model.*`. Needs the .NET 10 SDK.
 Run the builder with `dotnet run --project WarOrgan.Data.BuildDataset`; it validates and writes `<DatasetId>.zip`.
-The app (WarOrgan 3.0+) imports the ZIP directly under **Data Sets -> Import from file**.
+The app imports the ZIP directly under **Data Sets -> Import from file**.
 
-> The app is closed source here; anything about app behaviour is inferred from the model comments and
-> validation, and is marked *(inferred)*.
+> App behaviour was read from the decompiled installed app, see [07-app-behaviour](07-app-behaviour.md);
+> statements marked *(inferred)* below predate that and are superseded by it.
 
 ## Dataset layout
 
@@ -150,31 +150,21 @@ The converter's output must satisfy all of these.
 - Every `CategoryKeywords` entry must occur as a keyword on some unit (or model); a model keyword may not
   duplicate a unit keyword.
 
-## The locally installed WarOrgan app is NOT a usable reference (checked 2026-11-06)
+## Installed app vs. this model (checked 2026-11-06)
 
-`C:\Program Files\War Organ\War Organ.exe` is **version 1.3.0** (single-file build), while this repo's README
-says dataset import needs **WarOrgan 3.0 or later**. Its data folder
-(`%APPDATA%\WarOrgan\Data`, dataset id `Warhammer 40k 11th`, `DataInfo.json` version 1.2.21, `MinAppVersion` 1.2.1)
-is in the **old format**, which differs from the current model:
+The installed app's embedded `WarOrgan.Data.Model` was decompiled and compared with this repo's model: **same types,
+same members, same flag values, `CurrentDataSetFormatVersion = 1`**. A dataset built with this repo's builder is
+therefore in the format the installed app reads. App behaviour is documented in
+[07-app-behaviour](07-app-behaviour.md); that doc replaces every "(inferred)" statement in these notes.
 
-| Old app data | Current `WarOrgan.Data.Model` |
-| --- | --- |
-| `DataInfo.json`, `FactionInfoData.json` | `DataSetInfo.json` (with `DataSetFormatVersion`), `DataSetDefinition.json` (adds `Features`, `CategoryKeywords`) |
-| Roster key `Dettachments` (sic) | `Detachments` |
-| `InitalWargear` (sic) | `InitialWargear` |
-| Typed stats `Movement, Toughness, Save, Wounds, Leadership, OC, InvulSave`; weapons `Range, Attacks, ToHit, Strength, AP, Damage, IsMelee` | Generic `Characteristic{Id,Value}` lists |
-| `WeaponScope`, `AdditionalWeapons` | `WeaponStatAdjustment`, `AddedWeapon` |
+The data folder in `%APPDATA%\WarOrgan\Data` is a different matter: it is a leftover from an older installation in the
+**old format** (`DataInfo.json` v1.2.21, `FactionInfoData.json`, roster keys `Dettachments` and `InitalWargear`, typed
+stat fields like `Movement`/`Toughness`/`Range`/`IsMelee`) and the user cannot load it in the current app. Do not
+copy conventions from it, and do not use it as a content source (its detachments and stratagems are the
+maintainer's own work).
 
-Consequences:
-
-- Do not copy conventions from that folder; it would not validate against the current builder.
-- That app version predates dataset import, so a ZIP from this project cannot be loaded into it.
-- It cannot answer the maintainer questions in [04-gaps](04-gaps.md): they concern 3.0 behaviour. Install WarOrgan 3.0+
-  (source of the installer not yet known) and then inspect/observe it, or ask the maintainer.
-- Its dataset content (detachments, stratagems) is the maintainer's own work; it is not a source for this project.
-
-Also noted: only the .NET Core 3.1.8 runtimes are installed on this machine, **no SDK**. The builder needs the
-.NET 10 SDK.
+Only .NET Core 3.1.8 runtimes were installed originally; the .NET 10 SDK (10.0.403) has since been installed for
+this project.
 
 ## What the model shows about its intended game
 

@@ -28,6 +28,7 @@ Out: Boarding Actions, Crusade, Unbound Adversaries. See [docs/00-scope-and-deci
 | [04-gaps](docs/04-gaps.md) | What the WarOrgan model cannot (or may not) represent, evidence and workarounds |
 | [05-plan](docs/05-plan.md) | Phased plan and converter design |
 | [06-stratagems](docs/06-stratagems.md) | Stratagem source research (not started) |
+| [07-app-behaviour](docs/07-app-behaviour.md) | What the installed WarOrgan app really does (read from its code): points algorithm, limits, hard-wired dataset IDs |
 | [tools/analysis](tools/analysis/README.md) | The throwaway Python scripts that produced the findings |
 
 ## Provenance of the analysis
@@ -35,10 +36,11 @@ Out: Boarding Actions, Crusade, Unbound Adversaries. See [docs/00-scope-and-deci
 | Input | Version examined |
 | --- | --- |
 | BSData/wh40k-11e | commit `11ad64c81c058e5deeccd1cb23e64a972029c7b0` (2026-11-06, "Fixes #3389"), game system revision 18 |
+| Installed WarOrgan app | exe file version 1.3.0, embedded model identical to the repo model, `DataSetFormatVersion` 1 |
 | WarOrgan.Data | local clone at commit `45f934b8efcf4c988cd2cfd124458d78f09920c7`, `DataSetFormatVersion` = 1 |
 
-The WarOrgan **app** source was not available; any statement about app behaviour is inference and is
-flagged as such.
+App behaviour comes from decompiling the installed WarOrgan app (kept out of this repo); see
+[docs/07-app-behaviour](docs/07-app-behaviour.md).
 
 ## Licensing note
 
