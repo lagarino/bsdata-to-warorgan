@@ -85,7 +85,6 @@ Settings come from a JSON file and/or command-line options; none are hard-coded:
 | `outputPath` | where the dataset folder and ZIP are written; must be outside any git repo or ignored |
 | `datasetId` | **required, no default.** Either an own ID or the app's hard-wired `Warhammer 40k 11th` (see G7) |
 | `datasetVersion` | `major.minor.build.rev`; the app uses minor and build; higher wins for the same ID (07 section 4) |
-| `includeUnalignedForces`, `includeLegends` | O4 / O5 toggles |
 | `overridesPath` | optional curated overrides (own facts only: ally percentages, id remaps, manual fixes) |
 
 The scope exclusions (Boarding Actions, Crusade, Unbound Adversaries, Crucible) are fixed behaviour, not settings.
@@ -101,11 +100,11 @@ squad needs matching model names and wargear IDs). Mismatches are warnings, not 
 
 ## Phase 4 - Proof of concept: one faction end to end
 
-Pick **Orks** (single catalogue, imports only `Unaligned Forces`, rich detachments, enhancements with the
+Pick **Orks** (single catalogue, imports only `Unaligned Forces` (out of scope, so nothing to resolve), rich detachments, enhancements with the
 3-copy pattern, leaders, Support). Alternative low-risk first target: **Necrons** (no library). Goal:
 
 1. `DataSetDefinition.json` with the 11e battle sizes, category keywords, weapon/core ability regexes.
-2. `Rosters/Orks.json` (+ `Orks Legends.json` if needed) that passes `BuildDataset` validation with zero errors.
+2. `Rosters/Orks.json` that passes `BuildDataset` validation with zero errors.
 3. Hand-check five units against BSData and the rules: Boyz (points tiers, special weapons),
    Warboss (leader, enhancements), a vehicle (Battlewagon), an Epic Hero, a Support leader.
 4. Import the ZIP into WarOrgan and build a 1000-point list.
@@ -117,7 +116,7 @@ Exit criterion: the generated Orks list builds in the app with correct points fo
 Order: Necrons, T'au, Tyranids, Genestealer Cults, Leagues of Votann, Adeptus Custodes (single-catalogue
 factions) -> Aeldari / Drukhari (Library) -> Space Marines + chapters -> Astra Militarum, Imperial Knights,
 Chaos Knights, Chaos Space Marines & subfactions, Chaos Daemons, Grey Knights, Adepta Sororitas, Mechanicus,
-Deathwatch, Agents of the Imperium (G1), Titans -> Unaligned Forces / Legends.
+Deathwatch, Agents of the Imperium (G1), Titans.
 
 For each faction record a conversion report; track unconverted modifier counts per faction and drive them
 to zero or document them.

@@ -21,6 +21,8 @@ checkout**; the others `chdir` there themselves.
 | `det.py` | any | Detachment count, DP cost distribution, rules per detachment (G5) |
 | `enh.py` | any | The Orks `Enhancements - Upgrades` group (id `ebea-74c4-f3db-183d`) and unit limit counts |
 | `enhcopies.py` | any | Enhancement entries by copy-limit pattern (max 1 vs max 3 + divide), basis of the `Upgrade` flag (G2) |
+| `toggles.py` | any | Roster-level toggles that hide content, plus the number of `[Legends]` units |
+| `unaligned.py` | any | Contents of `Unaligned Forces.json` |
 
 Known limitations: `pts.py` and `hid.py` print only the top classes; `gs.py` truncates long rule text;
 none of them resolve `entryLinks` (links are counted as separate nodes, not followed), so unit counts are by

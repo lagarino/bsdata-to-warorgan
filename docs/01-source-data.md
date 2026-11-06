@@ -159,7 +159,7 @@ The survey printed only the 25 most common modifier classes; the long tail has n
 
 Why units are hidden in BSData (counts on `type: unit` entries):
 
-- Roster toggles: `Show Legends` etc. (80+), `Boarding Actions` (many), `Crusade` (many) -> Legends flag / ignored.
+- Roster toggles: `Show Legends`, `Boarding Actions`, `Crusade` -> all ignored (out of scope, see "Roster toggles and content sets").
 - Library-catalogue / primary-catalogue gating (`Chaos - Daemons Library`, `Astra Militarum`,
   `Deathwatch`, `Space Wolves`, `Agents of the Imperium`) -> faction `Allies` and `UnitIncludeRule`.
 - "Detachment selected / not selected" gating, mostly in Aeldari (units that need or exclude a detachment,
@@ -200,6 +200,43 @@ Unit `selections max` constraint at force/roster scope:
 | Epic Hero | 1 | 12 |
 | Other | 1 | 9 (e.g. Chaplain Grimaldus, Kill Team Cassius [Legends]) |
 | Other / Battleline / Epic with no constraint | - | 27 / 4 / 2 |
+
+## Roster toggles and content sets (what is in scope)
+
+BSData hides optional content behind roster-level "Show ..." entries and force choices. Counts below are the number of
+`hidden` modifiers (all catalogues) that depend on the toggle being **off** (`tools/analysis/toggles.py`).
+
+| Toggle / content set | Hidden-modifier count | Our scope |
+| --- | --- | --- |
+| `Crusade Force` | 584 | Out (decision) |
+| `Show Legends` | 389 | **Out: no Legends at all (D8).** 92 of 473 units are named `[Legends]` (about 19%); every one is dropped, together with anything that only exists for them |
+| `Show Crucible Characters` | 62 | Out (D6) |
+| `Show Imperial Agents`, `Show Imperial Knights`, `Show Chaos Knights`, `Show Titans`, Daemon god toggles (Khorne, Nurgle, Slaanesh, Tzeentch) | 48 / 23 / ... | **Ally visibility toggles.** Treated as "on": these allies are part of normal army building |
+| `Show White Dwarf content` | 28 | **Open (O10)**: units/rules published outside the main books |
+| `Show Unaligned Forces`, `Show Unaligned Fortifications` | 16 (fortifications) | Out, see below (recommended, pending confirmation, O4) |
+| `Show Killzone Upgrade: Shadowvaults content` | - | Out: a separate boxed-set mode |
+| Detachment-like toggles (`Shadow Legion`, `Iconoclast Fiefdom`, `Devoted of Ynnead`, `Armageddon` ...) | various | Most are detachment selections, handled by the detachment conversion; `Armageddon` is campaign content (out) |
+
+### Unaligned Forces (`Unaligned Forces.json`, library catalogue, revision 2)
+
+"Unaligned" means units that belong to no faction: they carry the keyword `Faction: Unaligned Forces` and the ally
+category `Allies: Unaligned Forces`, so any army can ally them when the roster toggle is on. Sixteen catalogues import it
+(`catalogueLinks`), which is why it appears in every faction's ally list.
+
+Contents (36 shared entries): **18 `[Legends]` entries** (fortifications: Aegis Defence Line, Bastion, Firestorm Redoubt,
+Fortress of Redemption, Macro-cannon Aquila Strongpoint, Plasma Obliterator, Primaris Redoubt, Skyshield Landing Pad,
+Vengeance Weapon Battery, Void Shield Generator, Vortex Missile Strongpoint, Wall of Martyrs Bunker/Defence
+Emplacement/Defence Line, Imperial Fortress Walls, Castellum Stronghold; and odd creatures/drones: Ambull, Guardian
+Drone, Spindle Drones, The Archivist), **3 Shadowvaults entries** (Sentry Gun, Searchlight, Breaching Robot, hidden unless
+`Killzone Upgrade: Shadowvaults` is on), and **weapon upgrade entries** used by the fortifications. Nothing in it is
+available without either `Show Legends` or the Shadowvaults toggle.
+
+Consequence: with Legends excluded (D8) and Shadowvaults out of scope, **Unaligned Forces contributes no units at all**.
+Recommended handling (O4): do not create an Unaligned Forces faction or ally entry, and ignore `Allies: Unaligned Forces`.
+The 16 catalogues that import it need no special care beyond not following that link.
+
+Also: `Library - Astartes Heresy Legends.json` is a library of Legends-style content and falls under D8 as well
+(to confirm when the catalogue graph is built).
 
 ## Things confirmed absent from BSData 11e
 

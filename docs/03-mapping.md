@@ -24,7 +24,7 @@ Status column: **OK** = representable as is, **WORK** = representable but needs 
 | BSData | WarOrgan | Status | Notes |
 | --- | --- | --- | --- |
 | `selectionEntry type=unit` | `Unit` | OK | `Id` = stable slug of the BSData entry name (+ catalogue where names clash); keep BSData `id` in a side map for diffing, not in the dataset |
-| `[Legends]` suffix in name | separate roster `"<Name> Legends.json"` (`IsLegend`) | WORK | Strip the suffix from `DisplayName`; ids stay stable |
+| `[Legends]` suffix in name | none | OUT | Decision D8: drop these units entirely (no Legends roster, no `IsLegend`). Drop leader/option references to them |
 | `Unit` profile `M,T,Sv,W,LD,OC,InSv,Base` | `StatLine.Stats` + `BaseInfo` | WORK | `Base` text ("32mm", "170 x 105mm Oval", "Hull", "Flying base") -> `BaseInfo.Type/Size`; all values must be non-empty |
 | Multiple `Unit` profiles on a unit (models with different stats; vehicles with `Damaged`) | multiple `StatLine`s with `StatlineRef` per `ModelComposition` | OK | Each statline must be referenced or `AlwaysShow` |
 | `type=model` entries inside unit | `ModelComposition` with `Limit{Min,Max}` | WORK | Model min/max in BSData is often a group + per-model constraints, possibly modified by other selections |

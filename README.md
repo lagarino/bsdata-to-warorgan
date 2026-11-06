@@ -14,8 +14,8 @@ committed here (see decision D5; `.gitignore` excludes output folders and ZIPs).
 ## Scope
 
 In: matched-play style 40k army building (units, wargear, points, leaders, detachments,
-enhancements, army rules, allies, Legends, stratagems from a *different* source).
-Out: Boarding Actions, Crusade, Unbound Adversaries. See [docs/00-scope-and-decisions.md](docs/00-scope-and-decisions.md).
+enhancements, army rules, allies, stratagems from a *different* source).
+Out: Boarding Actions, Crusade, Unbound Adversaries, Legends, Crucible characters. See [docs/00-scope-and-decisions.md](docs/00-scope-and-decisions.md).
 
 ## Read in this order
 
