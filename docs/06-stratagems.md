@@ -1,6 +1,6 @@
 # Stratagems
 
-**Status: source chosen, nothing built yet.** BSData wh40k-11e has no stratagem entries (only prose in abilities that mentions
+**Status: source and acquisition method chosen (D12, D13), nothing built yet.** BSData wh40k-11e has no stratagem entries (only prose in abilities that mentions
 them). The user pointed to **Wahapedia (11th edition)** as the source:
 
 - Core stratagems: `https://wahapedia.ru/wh40k11ed/the-rules/core-rules/#Core-Stratagems` (they apply to every army and detachment).
@@ -46,23 +46,33 @@ Retrieved by a sub-agent through a fetch tool that returns **model-written summa
 
 ## Constraints that follow from the project decisions
 
-- **D5:** no text from Wahapedia goes into this repo or onto GitHub. The stratagems stay in the locally generated dataset only.
-- Wahapedia states no licence, so treat the content as copyrighted: acquire it only for the user's own local use, credit
-  Wahapedia in the dataset README, and do not circumvent blocks (the site answered 403 to an automated fetch of one page).
-  A converter that scrapes automatically would also hit that wall and would put load on a hobbyist's site.
+- **D5:** no text from Wahapedia goes into this repo or onto GitHub. The cache and the stratagems stay on the local machine.
+- Wahapedia states no licence, so treat the content as copyrighted: acquire it only for the user's own local use and credit Wahapedia in
+  the dataset README. Do not circumvent blocks: the site answered 403 to an automated fetch of one page, so the downloader must
+  stop and report on a block instead of trying to get around it (see D13).
 - The data must be re-checked against the real HTML; summaries are not a basis for a parser.
 
-## Open decision O11 - how the converter obtains Wahapedia content
+## Decision D13 - built-in downloader with a persistent local cache
 
-| Option | How | Pros | Cons |
-| --- | --- | --- | --- |
-| A. Parse locally saved pages (recommended) | the user opens the core-rules page and each faction page in a browser and uses "Save page as" into a folder; the converter parses those HTML files | no automated requests, no 403 issue, no load on the site, trivially legal for personal use | about 30 manual saves per update |
-| B. Built-in downloader | the converter fetches pages itself (polite rate limit, cache, descriptive User-Agent) | one command | may be blocked, adds load, scraping a site with no stated licence, more code |
-| C. Both | A first, B later as an opt-in | | |
+The converter downloads the Wahapedia pages it needs **once**, stores them **on the file system**, and reuses them on every
+later run (no network access needed after the first successful download). Specification:
+
+| Aspect | Design |
+| --- | --- |
+| Location | a folder on disk, outside any git repo; setting `wahapediaCacheDir`, default under the user's local application data (for example `%LOCALAPPDATA%\warorgan-wh40k-11e\cache\wahapedia\` on Windows) |
+| Persistence | files stay between runs and between tool versions; a run with a populated cache makes **no** requests |
+| Contents | the raw HTML of the core-rules page and one page per faction, plus a small index file (URL, fetch date/time, HTTP status, ETag / Last-Modified, content hash) so staleness is visible |
+| Commands | `cache status` (what is cached, when, size), `cache rebuild` (re-download everything; conditional requests where the server supports ETag / If-Modified-Since), `cache refresh <faction>` (one page), `cache clear` (delete all cached files and the index, asking for confirmation unless `--yes`) |
+| Which pages | only the core-rules page and the faction pages for the factions being converted, derived from the dataset's faction list; never a crawl of the site |
+| Manners | honour `robots.txt` (re-read at each rebuild), a fixed delay between requests (at least a couple of seconds), one connection at a time, an honest descriptive `User-Agent` with a project contact, retry with back-off only on 5xx/timeouts |
+| Blocks | **never work around a block.** On 403/429 the tool stops fetching, says which page failed, and tells the user they may place the saved page into the cache folder by hand (the parser treats cache files uniformly, however they got there) |
+| Offline | if a page is missing and the network or site refuses, the converter still builds the dataset **without** that faction's stratagems and lists the gaps in the report |
+| Privacy / licence | cache never committed (`.gitignore` entry for the default folder name, and the folder is outside the repo anyway); the dataset README credits Wahapedia; the tool prints a short notice on first download that the content belongs to its author and is for personal use |
+| Parsing | the parser reads the cached HTML only; downloading and parsing are separate stages so the parser can be tested on small synthetic HTML fixtures (no real site text in the repo, D5) |
 
 ## Tasks
 
-- [ ] Decide O11.
+- [x] Decided (D13): built-in downloader with a persistent file-system cache.
 - [ ] Obtain real HTML for the core-rules page and the Orks page (one real example of each) and write the parser against it;
       replace every *(summary)* row above with verified facts.
 - [ ] Define the stratagem schema in the converter (plain C# records mapping to the model) and a phase-normalisation table.

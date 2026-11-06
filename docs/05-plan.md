@@ -103,6 +103,7 @@ Settings come from a JSON file and/or command-line options; none are hard-coded:
 | `outputPath` | where the dataset folder and ZIP are written; must be outside any git repo or ignored |
 | `datasetId` | **required, no default.** Either an own ID or the app's hard-wired `Warhammer 40k 11th` (see G7) |
 | `datasetVersion` | `major.minor.build.rev`; the app uses minor and build; higher wins for the same ID (07 section 4) |
+| `wahapediaCacheDir` | persistent on-disk cache of Wahapedia pages (D13); default under the user's local app data, outside the repo |
 | `overridesPath` | optional curated overrides (own facts only: ally percentages, id remaps, manual fixes) |
 
 The scope exclusions (Boarding Actions, Crusade, Unbound Adversaries, Crucible) are fixed behaviour, not settings.

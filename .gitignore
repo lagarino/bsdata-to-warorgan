@@ -11,3 +11,7 @@ datasets/
 Output/
 *.zip
 *.worg
+
+# Local caches are never committed (decisions D5, D13)
+wahapedia-cache/
+cache/

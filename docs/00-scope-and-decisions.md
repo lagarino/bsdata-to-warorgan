@@ -44,6 +44,7 @@ noise (e.g. all "Boarding Actions modifiers" groups on units, `Crusade modifiers
 | D10 | **`Show White Dwarf content` needs no handling** (was O10) | Everything behind it is Crusade content (Battle Traits, Crusade Relics, Battle Honours, Crusade agendas); it contains no units. It is removed by the Crusade exclusion |
 | D11 | **Dispositions are not exclusive** | The user confirmed the 11e rules do not forbid two detachments with the same Force Disposition. `Detachment.Tags` stays empty; `ForceDispositions` carries the dispositions for display |
 | D12 | **Stratagem source: Wahapedia 11th edition** (user decision) | Core stratagems from its core-rules page, detachment stratagems from each faction page (they apply only when that detachment is selected). Nothing from it is committed to this repo (D5). How the converter obtains it is open decision O11 in [06-stratagems](06-stratagems.md) |
+| D13 | **Built-in downloader with a persistent local cache for Wahapedia content** (was O11, user decision and clarification) | The converter downloads the needed pages once and stores them **on the file system** so later runs reuse them without network access. It must offer commands to **rebuild** (re-download) and to **delete** the cache. Design constraints in [06-stratagems](06-stratagems.md): cache outside the repo, never committed (D5); fetch only the core-rules page and the faction pages; honour robots.txt, rate-limit, identify itself honestly; **never work around a block**: on a 403 it stops, reports, and falls back to HTML files the user places in the cache folder |
 
 ## Decisions still open
 
@@ -53,4 +54,3 @@ noise (e.g. all "Boarding Actions modifiers" groups on units, `Crusade modifiers
 | O7 | ~~Dataset ID~~ | **Resolved by D7**: it is a converter setting, not a project decision. |
 | O8 | ~~Publishing the generated dataset~~ | Resolved by D5. Still worth checking upstream BSData terms for the converter, but this repo redistributes no BSData or Games Workshop content |
 | O9 | ~~.NET 10 SDK~~ | **Done**: SDK 10.0.403 installed with winget; `ilspycmd` 11.2 installed as a global dotnet tool (used to read the app) |
-| O11 | How the converter obtains Wahapedia content | See [06-stratagems](06-stratagems.md): parse pages the user saves locally (recommended), or a built-in downloader. Wahapedia states no licence and its 11th-edition root answered 403 to an automated fetch |
