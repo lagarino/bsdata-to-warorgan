@@ -7,10 +7,10 @@ live in small curated files next to the converter and are merged in.
 ## Phase 0 - Repo and decisions  (now)
 
 - [x] Analyse source and target; write these docs.
-- [ ] Create the GitHub remote (see README "Publishing this repo").
-- [ ] Resolve open decisions O1-O8 in [00-scope-and-decisions](00-scope-and-decisions.md), especially
-      converter language (O1) and where the dataset lives (O2).
-- [ ] Decide whether to contact the WarOrgan maintainer now or after a proof of concept (O6).
+- [x] Create the GitHub remote (private, `lagarino/warorgan-wh40k-11e`).
+- [x] Decided: C# converter (D4), tool-only repo with local-only output (D5), no Crucible (D6).
+- [ ] Install the .NET 10 SDK (O9) and WarOrgan 3.0+ (needed to import a ZIP and to settle O6).
+- [ ] Remaining open decisions: O4, O5, O7 in [00-scope-and-decisions](00-scope-and-decisions.md).
 
 ## Phase 1 - Finish the analysis  (small, do before writing the converter)
 
@@ -100,7 +100,9 @@ carry those numbers.
 
 ## Phase 7 - Quality and release
 
-- Golden tests: for a fixed set of units, compare converter output with a reviewed JSON snapshot.
+- Tests use **small synthetic BSData fixtures written by us** (decision D5: no BSData or generated dataset content
+  in the repo). Real-data checks are a local-only script that runs the converter on a user-supplied checkout and
+  compares against expectations kept outside the repo.
 - Cross-check points for a sample of units/model counts against a second source (printed or official app).
 - Conversion reports checked in under `reports/` per BSData commit.
 - Dataset README with attribution (BSData contributors, stratagem source), the G1/G3 deviations, and the

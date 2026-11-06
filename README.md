@@ -7,6 +7,10 @@ Work-in-progress effort to build a [WarOrgan](https://github.com/) dataset for p
 **Status: analysis and planning complete; no converter written yet.** Nothing in this repo is a
 usable dataset yet.
 
+**This repo contains tooling and notes only.** The converter (C#, planned) is meant for anyone to run against their
+own checkout of BSData/wh40k-11e. The dataset it generates stays on the machine of whoever runs it and is never
+committed here (see decision D5; `.gitignore` excludes output folders and ZIPs).
+
 ## Scope
 
 In: matched-play style 40k army building (units, wargear, points, leaders, detachments,
@@ -39,28 +43,13 @@ flagged as such.
 ## Licensing note
 
 BSData repositories carry no LICENSE file at the commit examined (the README says "maintained by
-community, in no way endorsed by any company/publisher"). Check upstream terms and the Games Workshop
-IP position before publishing any generated dataset. This repo contains only analysis and tooling.
-
-## Publishing this repo
-
-The `gh` CLI was not installed when this repo was created, so it exists only locally. To publish it:
-
-```powershell
-# option A: GitHub CLI
-winget install GitHub.cli ; gh auth login
-gh repo create warorgan-wh40k-11e --private --source . --remote origin --push
-
-# option B: create an empty repo on github.com, then
-git remote add origin https://github.com/<you>/warorgan-wh40k-11e.git
-git push -u origin main
-```
-
-Start private: the licensing question above is unresolved.
+community, in no way endorsed by any company/publisher"). This repo redistributes none of that content and no
+generated dataset (decision D5); it contains only analysis and tooling. Check upstream BSData terms and the
+Games Workshop IP position for your own use of the generated output.
 
 ## Resuming
 
 1. Read [docs/05-plan](docs/05-plan.md), phase 1 is the next piece of work.
 2. Clone `BSData/wh40k-11e` next to this repo (`../wh40k-11e`) and `WarOrgan.Data` (`../WarOrgan.Data`); check out the
    commits listed under *Provenance* to reproduce the numbers, or re-run `tools/analysis` on newer data and update the docs.
-3. Decide the open decisions (O1-O8).
+3. Install the .NET 10 SDK, then settle the remaining open decisions (O4, O5, O7).

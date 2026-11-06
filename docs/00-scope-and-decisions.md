@@ -33,16 +33,17 @@ noise (e.g. all "Boarding Actions modifiers" groups on units, `Crusade modifiers
 | D1 | Keep this analysis/tooling in its own repo, separate from WarOrgan.Data | The WarOrgan.Data README asks that game datasets live in the owner's own repo |
 | D2 | Do not change `WarOrgan.Data.Model` for now; work around gaps | The model is coupled to the app; changes must be agreed with the maintainer |
 | D3 | Stratagems come from a non-BSData source | BSData 11e contains no stratagem entries |
+| D4 | **Converter language: C#**, referencing `WarOrgan.Data.Model` (was O1) | Typed output validated by the same classes as the app. Needs the .NET 10 SDK, which is **not installed** on the dev machine yet (only runtime 3.1.8) |
+| D5 | **This repo is a tool anyone can run; the generated dataset is never committed or published** (was O2 and O8) | Only code goes on GitHub; the dataset stays on the machine of whoever runs the converter. Consequences: the converter takes the BSData checkout and the output folder as arguments; `.gitignore` covers output and ZIPs; **no BSData text or generated data in tests or fixtures** (use small synthetic fixtures); curated override files may hold only our own facts, not rules text |
+| D6 | **Exclude `[Crucible]` characters** (was O3) | Not clearly plain 40k; roughly 100 weapon-cost modifiers |
 
 ## Decisions still open
 
 | # | Question | Notes / leaning |
 | --- | --- | --- |
-| O1 | Converter language: C# or Python? | Leaning **C#** referencing `WarOrgan.Data.Model` so output is typed and validated by the same classes. Python stays for exploration. |
-| O2 | Repo layout for the dataset itself: fork WarOrgan.Data, git submodule it, or add its project via path reference? | WarOrgan.Data README recommends forking. A submodule keeps this repo small and lets us pull upstream model changes. |
-| O3 | Include `[Crucible]` characters? | Crucible is a custom-character system (many weapon-cost modifiers, ~100 point-modifiers). Not obviously "plain 40k". Default: exclude until confirmed. |
 | O4 | Include `Unaligned Forces` and `Unaligned Fortifications`? | They are BSData "Show ..." toggles. Default: include Unaligned Forces as an ally faction, decide fortifications later. |
 | O5 | Legends units | Model supports them (`Unit.IsLegend` set from a `"{Name} Legends".json` roster). Plan: split units whose name ends in `[Legends]` into a separate roster file. Confirm. |
-| O6 | Ask the WarOrgan maintainer about the app-behaviour questions in [04-gaps](04-gaps.md) | Needs the user to decide whether to open an issue / email warorgan@gmail.com. |
-| O7 | Dataset ID and name | e.g. `WH40K-11E`. Must stay stable once published because saved lists reference it. |
-| O8 | Publishing / licensing of the generated dataset | See README licensing note. |
+| O6 | Answer the app-behaviour questions in [04-gaps](04-gaps.md) | The locally installed app (v1.3.0) uses the **old** data format and cannot answer them (see [02-target-model](02-target-model.md)). Needs WarOrgan 3.0+ installed, or the maintainer. Nothing has been sent to the maintainer. |
+| O7 | Dataset ID and name | e.g. `WH40K-11E`. Must stay stable because saved lists reference it. Note the installed 1.3.0 app already has a dataset id `Warhammer 40k 11th`; avoid that id to prevent clashes |
+| O8 | ~~Publishing the generated dataset~~ | Resolved by D5. Still worth checking upstream BSData terms for the converter, but this repo redistributes no BSData or Games Workshop content |
+| O9 | .NET 10 SDK | Must be installed before any C# work (`winget install Microsoft.DotNet.SDK.10 --source winget`) |

@@ -4,3 +4,10 @@ bin/
 obj/
 Output/
 .vs/
+
+# Generated dataset output is never committed (decision D5)
+dataset/
+datasets/
+Output/
+*.zip
+*.worg

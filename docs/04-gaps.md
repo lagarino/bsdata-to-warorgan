@@ -113,4 +113,5 @@ Stratagems - see [06-stratagems](06-stratagems.md).
 6. How is a custom points limit handled in the app (BSData allows any value >= 500 in steps of 250)?
 7. Is a `Legends` roster file matched by name exactly `"<Faction Name> Legends.json"`?
 
-Do not send these until the user decides (open decision O6).
+Do not send these until the user decides (open decision O6). The locally installed app (v1.3.0) uses the old data
+format and cannot answer them; see [02-target-model](02-target-model.md).
