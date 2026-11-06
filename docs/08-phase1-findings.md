@@ -218,3 +218,10 @@ Applied in the same commit: [03-mapping](03-mapping.md) (dispositions/tags, army
 - The chapter-only detachment layout (gap G9) needs a check that `AdditionalFactionKeywords` can name a non-ally roster.
 - Whether the app can require an attachment (`Loyally Protecting`): read `RequiredLeaderRule`.
 - Whether single-faction-keyword emission works for Deathwatch units that also carry `Faction: Adeptus Astartes`.
+
+## 12. Scope rule discovered while checking stratagems: Boarding Actions-only detachments
+
+13 detachments are hidden in the plain game: their `hidden` modifier is `notInstanceOf Boarding Actions` (visible only in
+Boarding Actions). Example: Orks `Ramship Raiders` and `Kaptin Killers`. Wahapedia's Orks list (15 detachments) matches
+BSData's plain-game Orks detachments exactly. The converter must therefore **drop detachments that are only visible in
+Boarding Actions** (and Crusade-only ones), not just ignore the toggle: of 263 detachments, the 13 above are out.

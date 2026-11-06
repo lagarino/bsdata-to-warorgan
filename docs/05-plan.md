@@ -36,11 +36,9 @@ Close the "open data questions" in [01-source-data](01-source-data.md):
 
 Deliverable (delivered): [08-phase1-findings](08-phase1-findings.md), updates to the mapping and gap docs, and `tools/analysis/p1_*.py`. The open items that remain are listed in section 10 of that document.
 
-## Phase 2 - Stratagem source  (parallel with phase 1)
+## Phase 2 - Stratagem source: Wahapedia (decision D12; method O11 open)
 
-Follow [06-stratagems](06-stratagems.md): shortlist candidate sources, check licence/terms, check coverage
-of the 11th edition (core + detachment stratagems), pick a format, define the curated-file schema
-(`data/stratagems/*.json`) and the merge keys (detachment names must match BSData names exactly).
+Follow [06-stratagems](06-stratagems.md): obtain real Wahapedia HTML, write and verify a parser, define the in-memory stratagem schema and the phase-normalisation table, and match detachments by name against BSData. **Nothing from Wahapedia is stored in this repo** (D5); the converter reads it from a user-supplied location at run time, and the dataset README credits Wahapedia.
 
 ## Phase 3 - Converter design and skeleton
 
