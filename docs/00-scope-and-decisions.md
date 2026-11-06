@@ -42,6 +42,7 @@ noise (e.g. all "Boarding Actions modifiers" groups on units, `Crusade modifiers
 | D8 | **No Legends support at all** (was O5) | 92 of 473 units and 389 modifiers are Legends-related. Drop every `[Legends]` unit, never write a `"<Name> Legends.json"` roster, drop leader/option references to dropped units, and do not set `Unit.IsLegend`. The `Library - Astartes Heresy Legends` catalogue is dropped too (to confirm) |
 | D9 | **Exclude Unaligned Forces** (was O4) | Confirmed by the user. The catalogue holds only `[Legends]` and Shadowvaults content, so nothing is left in scope. No Unaligned Forces faction, no ally entry; ignore `Allies: Unaligned Forces` and the link that 16 catalogues have to it |
 | D10 | **`Show White Dwarf content` needs no handling** (was O10) | Everything behind it is Crusade content (Battle Traits, Crusade Relics, Battle Honours, Crusade agendas); it contains no units. It is removed by the Crusade exclusion |
+| D11 | **Dispositions are not exclusive** | The user confirmed the 11e rules do not forbid two detachments with the same Force Disposition. `Detachment.Tags` stays empty; `ForceDispositions` carries the dispositions for display |
 
 ## Decisions still open
 

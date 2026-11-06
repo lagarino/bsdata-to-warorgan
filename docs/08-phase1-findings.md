@@ -65,9 +65,9 @@ list plus Knights and Agents allies.
   (`Terminator Detachment`, `Ironstorm Detachment`, `Nightmare`, `Mutant` ...).
 - **Mapping:** `Detachment.ForceDispositions` = the five disposition categories (display-only in the app).
   **`Detachment.Tags` must not be filled from these**: in the app, tags are *mutual exclusion* categories (two detachments
-  sharing a tag cannot both be selected), and BSData has no such rule. Leave `Tags` empty. Open question (needs the
-  printed rules): do the 11e rules forbid two detachments with the same disposition? BSData contains no rule text
-  about dispositions.
+  sharing a tag cannot both be selected), and BSData has no such rule. Leave `Tags` empty. The user confirmed (D11) that
+  the 11e rules do not forbid two detachments with the same disposition; BSData itself contains no rule text about
+  dispositions, so this could not be checked in the data.
 - Detachment selection constraints in BSData: each detachment `max 1`; the group's cap is 1 when Incursion + a 3DP
   detachment; otherwise none. Visibility depends only on mode (Boarding Actions) and, for chapters/Drukhari, the primary
   catalogue.
@@ -87,8 +87,8 @@ list plus Knights and Agents allies.
   vehicles link none (90 units across Orks, Necrons, Space Marines, T'au have no link). The app itself requires
   `Character` or `Epic Hero` for ordinary enhancements (`ModelUtils`), so `UnitFlags.NoEnhancements` is needed only for
   Characters that have no link; units linked to `Enhancements - Upgrades` are the eligible bodies for **Upgrade**-flag
-  enhancements (the max-3 pattern). To check in the app (`EnhancementUtils`) that Upgrade enhancements are not restricted to
-  Characters.
+  enhancements (the max-3 pattern). The app offers Upgrade enhancements to any unit except Epic Heroes, so each one needs
+  explicit requirements; see section 10, answer 2, for the resulting conversion rules.
 
 ## 4. Army rules
 
@@ -183,11 +183,38 @@ Applied in the same commit: [03-mapping](03-mapping.md) (dispositions/tags, army
 [04-gaps](04-gaps.md) (G6 tag bullet, new item G9), [05-plan](05-plan.md) (phase-1 closed, converter pipeline),
 [01-source-data](01-source-data.md) (unit definition).
 
-## 10. Still open after phase 1
+## 10. Questions raised in phase 1, and their answers
 
-1. Do the 11e rules forbid two detachments with the same disposition? (affects `Tags`; default: none)
-2. Chapter-only detachments: separate roster per chapter, and how the app should show Space Marine detachments to a chapter.
-3. `Upgrade`-flag enhancements: which unit kinds the app allows them on (check `EnhancementUtils`).
-4. The roughly 20 model-category point conditions: confirm each is a base-model count; handle Wolf Guard Headtakers.
-5. Leader attachments labelled `Support Weapon`, `Loyally Protecting`, `Retainers`.
-6. Whether single-faction-keyword emission for Space Marines works for units that also carry `Faction: Deathwatch`.
+1. **Can two detachments share a disposition?** Yes, no restriction (user decision D11). `Detachment.Tags` stays empty and
+   dispositions are display-only.
+2. **Which units may take `Upgrade` enhancements?** Read from the app (`ModelUtils.CanEquipEnhancement`):
+   - A unit with `UnitFlags.NoEnhancements` never qualifies.
+   - An **ordinary** enhancement needs a keyword containing `Character` and the unit must not be an `Epic Hero`.
+   - An **`Upgrade`** enhancement needs no `Character`, but `Epic Hero` units are still excluded: so it may go on any other unit.
+   - `IgnoreStandardEnhancementRules` lifts both restrictions and always applies the requirement lists.
+   - The requirement lists (`RequiredUnitNames`, `RequiredKeywords`, `RequiredOneOfKeywords`, `ExcludedKeywords`, `RequiredAbilities`;
+     keyword tests are substring matches) are applied when the user's "filter enhancements" setting is on, or always for
+     `IgnoreStandardEnhancementRules`. The app does **not** use BSData's "group linked into the unit" eligibility.
+
+   Conversion rules that follow: (a) a Character that has no `Enhancements` group link gets `NoEnhancements`; (b) for each
+   enhancement, derive `RequiredUnitNames` (small sets, e.g. `Wimp-kickaz` -> Nobz) or `RequiredKeywords` /
+   `ExcludedKeywords` from the units that link its group and from its own hide-conditions, so the filter reproduces
+   BSData's eligibility; (c) every `Upgrade` enhancement **must** carry such a requirement, otherwise it would be offered to
+   every non-Epic-Hero unit including vehicles when the filter is off.
+3. **The ~20 category-count point conditions.** Not decided by the user ("I don't know"). Plan: the converter reviews each
+   during unit extraction (a category count normally equals the number of base models) and reports only those that do not
+   reduce to a model-count tier. Known real mix: Wolf Guard Headtakers with Hunting Wolves.
+4. **Non-standard attachments are not a problem.** Only 7 associations (plus 42 unlabeled plain leaders, Chaos Daemons "Leading"):
+   - `Support Weapon` (3: Aeldari D-Cannon, Shadow Weaver, Vibro Cannon Platforms, 0-1, attach to Guardian Defenders) ->
+     `LeaderInfo` with `LeaderType = "Support Weapon"` (the model allows one attached unit per `LeaderType`).
+   - `Loyally Protecting` (2: Nork Deddog, Ogryn Bodyguard, exactly 1, attach to Command Squad) -> `LeaderInfo` with a
+     distinct `LeaderType`, and a required attachment if the app supports it (check `RequiredLeaderRule`).
+   - `Retainers` (2: Necrons Cryptothralls and Canoptek Tomb Crawlers, 0-1, attach to a Cryptek) -> `LeaderInfo` with
+     `RequiredLeaderKeywords = [Cryptek]` (the exact case the model comment describes).
+   All are expressible; they only need a small per-case mapping table.
+
+## 11. Open after phase 1
+
+- The chapter-only detachment layout (gap G9) needs a check that `AdditionalFactionKeywords` can name a non-ally roster.
+- Whether the app can require an attachment (`Loyally Protecting`): read `RequiredLeaderRule`.
+- Whether single-faction-keyword emission works for Deathwatch units that also carry `Faction: Adeptus Astartes`.

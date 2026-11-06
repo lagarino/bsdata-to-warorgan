@@ -98,7 +98,7 @@ none in the dataset; mention in the dataset README or ask whether a `Unit` flag 
 - **Points tiers** are ceilings on total model count and on copy index; costs must not decrease as counts grow
   (the app sorts by cost). See [07-app-behaviour](07-app-behaviour.md) for the exact algorithm. Costs that depend on the
   *mix* of model types cannot be expressed; not yet seen in the data.
-- **`Detachment.Tags` are mutual-exclusion categories** in the app (two detachments sharing a tag cannot both be selected). BSData detachment categories are dispositions, not exclusion groups, so `Tags` stays empty (see [08-phase1-findings](08-phase1-findings.md) section 2); the question whether the 11e rules forbid two detachments with the same disposition is open.
+- **`Detachment.Tags` are mutual-exclusion categories** in the app (two detachments sharing a tag cannot both be selected). BSData detachment categories are dispositions, not exclusion groups, so `Tags` stays empty (see [08-phase1-findings](08-phase1-findings.md) section 2); the user confirmed that the 11e rules do not forbid two detachments with the same disposition (D11).
   To verify in the BSData rule text for `Take and Hold`, `Purge the Foe` and `3DP Detachment`.
 
 ---
