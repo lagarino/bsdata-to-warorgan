@@ -75,6 +75,30 @@ Anything the evaluator cannot interpret goes to the report as "unconverted modif
 `annotation` modifiers (text appended to profiles) must be recognised and turned into keyword adjustments
 where they carry rules keywords (e.g. SUSTAINED HITS 1), otherwise surfaced as ability text.
 
+## Phase 3a - Converter settings (decision D7)
+
+Settings come from a JSON file and/or command-line options; none are hard-coded:
+
+| Setting | Notes |
+| --- | --- |
+| `bsDataPath` | checkout of BSData/wh40k-11e |
+| `outputPath` | where the dataset folder and ZIP are written; must be outside any git repo or ignored |
+| `datasetId` | **required, no default.** Either an own ID or the app's hard-wired `Warhammer 40k 11th` (see G7) |
+| `datasetVersion` | `major.minor.build.rev`; the app uses minor and build; higher wins for the same ID (07 section 4) |
+| `includeUnalignedForces`, `includeLegends` | O4 / O5 toggles |
+| `overridesPath` | optional curated overrides (own facts only: ally percentages, id remaps, manual fixes) |
+
+The scope exclusions (Boarding Actions, Crusade, Unbound Adversaries, Crucible) are fixed behaviour, not settings.
+
+## Phase 3b - Rule-compatibility report
+
+For users who pick the hard-wired ID. The app's ~60 faction-specific rules (`WarOrgan.ArmyValidation.*`) reference unit
+IDs/names, detachment names and keywords as string literals. Build a one-off extractor (a script over the decompiled app,
+run by the maintainer of this tool, not shipped with the app's code) that produces a **curated list of names the rules
+depend on**, stored as our own plain data file (names only, no app code). The converter then reports, per rule, whether
+each referenced name exists in the generated dataset and whether the data shape matches (for example a rule limiting a
+squad needs matching model names and wargear IDs). Mismatches are warnings, not failures.
+
 ## Phase 4 - Proof of concept: one faction end to end
 
 Pick **Orks** (single catalogue, imports only `Unaligned Forces`, rich detachments, enhancements with the

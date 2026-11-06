@@ -88,7 +88,22 @@ in `Unit.Keywords` with exactly this spelling and case, as must the god keywords
   `FactionAlly.ArmyPercentageRestriction`.
 - `UnitIncludeRule` has no points effect (gap G1 stands).
 
-## 4. What the data folder in `%APPDATA%\WarOrgan` is
+## 4. Dataset import, identity and reversibility (`DataSetService`, `DataSetUtils`)
+
+- Importing a ZIP copies it into `%APPDATA%\WarOrgan\Data\DataSets` as `<new guid>.zip`. Existing datasets are never
+  overwritten, so several datasets with the same ID and/or version can coexist as separate files.
+- A dataset is identified by `DataSetInfo.Id` + `Version`. Selecting by ID (`FindDataSetMatch`) uses the **exact
+  requested version if present, otherwise the highest version** with that ID. Lists store the dataset ID they were
+  created with (`CreatedWithDataSetId`) and unit IDs, so they need a dataset with that ID and compatible unit IDs.
+- The app can also pull datasets from URLs (`CheckDataSourceAsync`, stored in `DataSets\config.json` `Sources`).
+- A dataset can be deleted again from the Data Sets page (`DeleteDataSetAsync` by id, by version, or all versions).
+
+Consequences for the dataset-ID choice (decision D7): reusing `Warhammer 40k 11th` with a **higher version** than any other
+dataset of that ID makes ours the one selected for that ID, and it is undone by deleting it (or by importing something
+with a higher version). Lists created while using it keep the ID but reference our unit IDs, which is the only truly
+sticky part. Use a clearly high `datasetVersion` deliberately, and a different one when you do not want to override.
+
+## 5. What the data folder in `%APPDATA%\WarOrgan` is
 
 A leftover from a previous installation: **old format**, incompatible with the current app and model
 (`Dettachments`, `InitalWargear`, typed stat fields, `DataInfo.json` / `FactionInfoData.json`, version 1.2.21).

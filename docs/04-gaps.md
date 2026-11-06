@@ -116,8 +116,10 @@ Options for the dataset ID (open decision O7):
 | A. Own ID (e.g. `WH40K-11E`) | No clash with the maintainer's datasets or old lists | No validation beyond points, fewer exports |
 | B. Reuse `Warhammer 40k 11th` | Validation and all exports work | The ~60 faction-specific rules fire against our data (keyed on unit and detachment *names*); lists saved under that ID from the old dataset would point at our unit IDs and break; may collide with any official dataset the app downloads |
 
-Recommendation: start with A while the converter is built; try B locally as an experiment once rosters validate,
-and compare validator output on a few lists.
+**Decision (D7):** the choice is left to whoever runs the converter (`datasetId` setting, required, no silent default).
+The project's preferred target is B. To make that safe the converter must produce a **rule-compatibility report** (plan
+phase 3b): which of the app's name-keyed rules reference unit or detachment names that exist in the generated
+dataset, so a user choosing B knows what will fire.
 
 ## G8 - Faction-specific rules cannot be expressed in a dataset  [New]
 
