@@ -63,4 +63,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: >
           gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME"
+          $( [[ "$GITHUB_REF_NAME" == *-* ]] && echo --prerelease )
           --notes "Built against WarOrgan.Data commit ${WARORGAN_DATA_COMMIT} (MIT, see THIRD-PARTY-NOTICES.md in the package). The package contains no game data: run it against your own copy of a BSData repository. See the README for how."
