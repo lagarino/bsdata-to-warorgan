@@ -21,11 +21,16 @@ public class WargearTests
     private static ModelWargear Gear(Unit u, string model) => u.UnitComposition.ModelCompositions.Single(m => m.ModelName == model).Wargear.Single();
 
     [Fact]
-    public void Required_upgrades_are_the_models_initial_wargear()
+    public void Required_upgrades_are_the_models_initial_wargear_and_variants_become_options()
     {
         var u = Orks("Boyz");
-        Assert.Equal(["choppa"], Gear(u, "Boy").InitialWargear);
-        Assert.Equal(["big shoota"], Gear(u, "Boy w/ Big shoota").InitialWargear);   // trimmed, lower-cased entry name = weapon id
+        var boy = Gear(u, "Boy");
+        Assert.Equal(["choppa"], boy.InitialWargear);
+        // "Boy w/ Big shoota" is merged into "Boy"; its weapon replaces the choppa, at most 3 (the Special Weapons cap).
+        var option = Assert.Single(boy.Options);
+        Assert.Equal(["choppa"], option.Replaces);
+        Assert.Equal(["big shoota"], Assert.Single(option.Options).Items);   // trimmed, lower-cased entry name = weapon id
+        Assert.Equal(3, option.Max);
     }
 
     [Fact]

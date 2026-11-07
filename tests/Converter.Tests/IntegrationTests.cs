@@ -89,6 +89,20 @@ public class IntegrationTests
 
     [IntegrationTheory]
     [MemberData(nameof(Factions))]
+    public void The_model_limits_together_never_allow_more_models_than_the_points_table_prices(string file)
+    {
+        // Regression: variant models used to carry 0-N limits each, so a unit could field a multiple of its real maximum.
+        var (units, _) = ExtractAll(file);
+        foreach (var u in units)
+        {
+            var allowed = u.UnitComposition.ModelCompositions.Where(m => m.UpgradeCost == null).Sum(m => m.Limit!.Max);
+            var priced = u.Points.Max(p => p.ModelCount);
+            Assert.True(allowed <= priced, $"{u.Id}: models may total {allowed} but points only price up to {priced}");
+        }
+    }
+
+    [IntegrationTheory]
+    [MemberData(nameof(Factions))]
     public void Wargear_ids_resolve_and_every_weapon_is_selectable(string file)
     {
         var (units, warnings) = ExtractAll(file);

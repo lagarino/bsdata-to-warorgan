@@ -193,7 +193,7 @@ repo); see [docs/07-app-behaviour](docs/07-app-behaviour.md).
 
 - **Unofficial.** This project is not endorsed by or connected to WarOrgan, BSData, or any games publisher. Game names and
   rules belong to their owners. You are responsible for how you use the data you convert and the output you generate.
-- **This repo's own code and documentation:** no licence has been chosen yet (to be decided before the first release).
+- **This repo's own code and documentation:** [MIT](LICENSE), the same licence as WarOrgan.Data. This covers only the code and documentation here, not any game data or generated dataset.
 - **BSData:** the repositories examined carry no LICENSE file. This repo redistributes none of their content.
 - **WarOrgan.Data (model library and builder):** [MIT](https://github.com/zenchovey/WarOrgan.Data/blob/main/LICENSE),
   copyright (c) 2026 zenchovey. That permits redistributing a build that includes the model library as long as the

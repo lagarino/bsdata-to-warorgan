@@ -120,6 +120,7 @@ Publishing prebuilt executables as GitHub Releases (for example `v0.1.0`) is fea
   `THIRD-PARTY-NOTICES` file with its MIT text and copyright line (zenchovey, 2026).
 - Plan: `dotnet publish` self-contained single-file for win-x64, linux-x64, osx-arm64, built by a GitHub Actions workflow on version tags.
 - Embedded data files must contain only our own mappings and names, never rules text from BSData or Wahapedia.
+- This repo's own code is MIT-licensed (`LICENSE`); the release package also carries WarOrgan.Data's MIT notice.
 - The repo is private, so releases are visible to collaborators only until the repo is made public (a separate decision).
 - `dotnet publish` copies the builder project's sample `Assets` folder (an unrelated example dataset) next to the program; exclude it from release packages.
 - Wahapedia has no licence: the stratagem step stays optional (`--no-stratagems`), with a first-download notice.

@@ -28,6 +28,7 @@ public sealed class UnitExtractor(BsdDatabase db)
         var comp = new CompositionExtractor(db).Extract(entry, warnings);
         unit.UnitComposition.ModelCompositions.AddRange(comp.Models);
         new WargearExtractor(db).Apply(unit, entry, comp, warnings);
+        VariantMerger.Merge(unit, comp, warnings);
         var pts = new PointsExtractor().Extract(entry, name, comp.MinModels, comp.MaxModels);
         unit.Points.AddRange(pts.Points);
         foreach (var u in pts.Unsupported) warnings.Add($"{name}: points: unsupported {u}");
