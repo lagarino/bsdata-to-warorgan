@@ -125,3 +125,34 @@ public class LeaderTests
         Assert.DoesNotContain("BOSS", Info(units, "Boss")!.UnitNames);
     }
 }
+
+/// <summary>Core abilities a unit has only while a leader is attached are kept on the leader.</summary>
+public class LeaderGrantTests
+{
+    private const string Catalogue = """
+    { "catalogue": { "id": "c", "name": "C", "type": "catalogue",
+      "categoryEntries": [ { "id": "c-a", "name": "Alpha" }, { "id": "c-g", "name": "Gamma" } ],
+      "sharedSelectionEntries": [
+        { "id": "u0", "name": "Alpha Squad", "type": "unit", "categoryLinks": [ { "targetId": "c-a" } ],
+          "infoLinks": [ { "type": "rule", "targetId": "r-fnp", "name": "Feel No Pain",
+            "modifiers": [ { "field": "name", "type": "append", "value": "5+" },
+                           { "field": "hidden", "type": "set", "value": true, "conditions": [ { "type": "lessThan", "field": "associations", "scope": "self", "childId": "u2", "value": 1 } ] } ] } ] },
+        { "id": "u2", "name": "Boss", "type": "model", "categoryLinks": [ { "targetId": "c-g" } ],
+          "associations": [ { "name": "Leading", "label": "Led by", "action": "group", "min": 0, "max": 1,
+            "conditionGroups": [ { "type": "or", "conditions": [ { "type": "instanceOf", "childId": "c-a", "field": "selections", "scope": "self", "shared": true, "value": 1 } ] } ] } ] }
+      ],
+      "entryLinks": [ { "id": "l0", "targetId": "u0", "type": "selectionEntry" }, { "id": "l2", "targetId": "u2", "type": "selectionEntry" } ] } }
+    """;
+
+    [Fact]
+    public void The_ability_moves_from_the_unit_to_the_leader_that_grants_it()
+    {
+        var db = Fixtures.Db(("Game.json", Fixtures.GameSystem), ("C.json", Catalogue));
+        var units = RosterExtractor.Extract(db, "C.json", []).Units;
+        Assert.Empty(units.Single(u => u.DisplayName == "Alpha Squad").CoreAbilities);          // not part of the unit as listed
+        var boss = units.Single(u => u.DisplayName == "Boss");
+        var grant = Assert.Single(boss.LeaderInfo!.Abilities!);
+        Assert.Equal(["Feel No Pain 5+"], grant.DatasheetAdjustments!.Single().Values);
+        Assert.Contains(boss.Infos, i => i.Title == grant.AbilityId);                               // the builder needs the ability to exist
+    }
+}

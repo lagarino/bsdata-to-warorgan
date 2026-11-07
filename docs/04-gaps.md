@@ -172,8 +172,15 @@ What is still open:
   catalogue must be part of the same conversion; otherwise the units are left out and `convert` says so. Open: allied points caps
   (`ArmyPercentageRestriction`, not in the source data), the higher points of some units when allied (G1), and a library with no
   matching faction catalogue (for example a titans library).
-- **Leaders in the four legion catalogues of the chaos set.** Their own files carry no leader associations, so those factions' characters
-  have no leader information (they cannot be attached to units). The parent catalogue of that set does have them. Not converted.
+- **Leader associations** are labelled in several ways ("Leader", "Led by", none, and "Supported by" / "Supported By" / none for support
+  units); all are read, which gave the four chaos legion catalogues their leaders (they were missing, not absent from the data).
+- **Abilities granted by an attached leader** [mostly closed]. A core ability that a unit has only while a given leader is attached is
+  written on the leader as a `LeaderAbilityRef` (adds the ability to the bodyguard unit). The unit is picked by no name when the leader
+  can lead only units that get it, by a keyword that exactly those units share, or by a keyword of the unit's own name. Where none of
+  those works the ability is left out and `convert` warns (for example one leader whose granted units are a part of the units he leads).
+- **Cannot be represented in the WarOrgan model** (so they stay as documented, not as tasks): a price that depends on the count of one
+  model group or optional model type (Windriders, Wolf Guard Headtakers), one size cap shared by differently-statlined model types,
+  list-building limit changes of a detachment, and ally-only prices (G1). The Titans libraries have no faction of their own.
 - **Datasheets without a faction category** (some characters) get the keyword of the roster they are listed in.
 - **Sub-factions** [closed for the army families of the first target]. A catalogue whose own datasheets carry a parent faction's keyword
   next to its own (a chapter of a parent army), or that is mostly made of the parent's imported units, lists the parent as an ally

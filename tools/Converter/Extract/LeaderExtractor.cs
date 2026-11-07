@@ -19,6 +19,24 @@ public sealed class LeaderExtractor(BsdDatabase db)
 {
     public const string RetainersType = "Retainers";
 
+    /// <summary>
+    /// The labelled associations, and the unlabelled "Leading" ones some catalogues use for a plain leader (checked to name units to lead).
+    /// </summary>
+    private static bool IsAttachment(JsonObject a) => Kind(a) is not null;
+
+    /// <summary>"Leader", "Supported by" or Retainers: catalogues label the same association in several ways ("Leader", "Led by", none).</summary>
+    private static string? Kind(JsonObject a)
+    {
+        var label = BsdDatabase.Str(a, "label");
+        var name = BsdDatabase.Str(a, "name");
+        if (label == RetainersType) return RetainersType;
+        if (a["conditionGroups"] is null && a["conditions"] is null) return null;
+        if (BsdDatabase.Str(a, "action") != "group") return label is "Leader" or "Supported by" ? label : null;
+        if (name == "Leading" && label is "Leader" or "Led by" or null or "") return "Leader";
+        if (name == "Supporting" && label is "Supported by" or "Supported By" or null or "") return "Supported by";
+        return label is "Leader" or "Supported by" ? label : null;
+    }
+
     /// <summary>A leader that may join <paramref name="UnitIds"/> only while <paramref name="Option"/> is selected.</summary>
     public sealed record GatedAttachment(int LeaderIndex, List<string> UnitIds, string Option);
 
@@ -35,13 +53,13 @@ public sealed class LeaderExtractor(BsdDatabase db)
         for (var i = 0; i < resolved.Count; i++)
         {
             var associations = BsdDatabase.Arr(resolved[i].Entry, "associations")
-                .Where(a => BsdDatabase.Str(a, "label") is "Leader" or "Supported by" or RetainersType).ToList();
+                .Where(IsAttachment).ToList();
             if (associations.Count == 0) continue;
             if (associations.Count > 1)
                 warnings.Add($"{units[i].DisplayName}: {associations.Count} attachment associations; only the first is converted");
 
             var association = associations[0];
-            var label = BsdDatabase.Str(association, "label");
+            var label = Kind(association);
             var categories = new List<string>();
             var gated = new List<(string Category, string Option)>();
             Collect(association, carriers, categories, gated, []);

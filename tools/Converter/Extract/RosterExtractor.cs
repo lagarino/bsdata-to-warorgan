@@ -48,6 +48,7 @@ public static class RosterExtractor
         var extractor = new UnitExtractor(db);
         var units = resolved.Select(r => extractor.Extract(r, armyRules, warnings)).ToList();
         var gated = new LeaderExtractor(db).Apply(resolved, units, warnings);
+        new LeaderGrantExtractor(db).Apply(resolved, units, warnings);
         var detachments = new DetachmentExtractor(db).Extract(catalogueFile, resolved, units, warnings, gated,
             parentKeyword is null ? null : resolved.Where(r => r.Imported && FactionKeywords(db, r.Entry).Contains(parentKeyword)).Select(r => r.OwnerFile).ToHashSet());
         return new RosterResult(resolved, units, armyRules, detachments, imported, parentKeyword);

@@ -121,11 +121,8 @@ public class IntegrationTests
             Assert.All(u.LeaderInfo!.UnitNames, n => Assert.Contains(n, ids));
             Assert.True(u.LeaderInfo.UnitNames.Count > 0 || u.LeaderInfo.AttachableByKeyword is { Count: > 0 }, $"{u.Id}: empty leader info");
         }
-        // Known gap: the four legion catalogues of the chaos set carry no leader associations in their own files.
-        if (!NoLeaderData.Contains(file)) Assert.Contains(units, u => u.LeaderInfo is not null);
+        Assert.Contains(units, u => u.LeaderInfo is not null);
     }
-
-    private static readonly HashSet<string> NoLeaderData = ["Chaos - Death Guard.json", "Chaos - Emperor's Children.json", "Chaos - Thousand Sons.json", "Chaos - World Eaters.json"];
 
     [IntegrationTheory]
     [MemberData(nameof(AllFactions))]
