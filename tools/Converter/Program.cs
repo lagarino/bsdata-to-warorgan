@@ -1,7 +1,9 @@
+using System.Text.Json;
+using WarOrganConverter.Extract;
 using WarOrganConverter.Load;
 using WarOrganConverter.Resolve;
 
-// Usage: warorgan-converter survey --bsdata <folder> [--faction <catalogue name>]...
+// Usage: warorgan-converter survey|extract --bsdata <folder> [--faction <catalogue name>]...
 // (convert and cache commands follow in later phases, see docs/05-plan.md)
 var argsList = args.ToList();
 string? Opt(string name)
@@ -16,9 +18,9 @@ IEnumerable<string> Opts(string name)
 }
 
 var command = argsList.FirstOrDefault() ?? "help";
-if (command != "survey")
+if (command is not ("survey" or "extract"))
 {
-    Console.WriteLine("Usage: warorgan-converter survey --bsdata <folder> [--faction <catalogue name>]...");
+    Console.WriteLine("Usage: warorgan-converter survey|extract --bsdata <folder> [--faction <catalogue name>]...");
     return command == "help" ? 0 : 2;
 }
 
@@ -36,6 +38,18 @@ foreach (var (file, root) in db.Roots.Where(kv => BsdDatabase.Str(kv.Value, "typ
     var name = BsdDatabase.Str(root, "name")!;
     if (factions.Count > 0 && !factions.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
     var units = resolver.Resolve(file);
+    if (command == "extract")
+    {
+        var extractor = new UnitExtractor(db);
+        var warnings = new List<string>();
+        var extracted = units.Select(u => extractor.Extract(u, warnings)).ToList();
+        Console.WriteLine($"{name}: {extracted.Count} units, {extracted.Sum(u => u.StatLines.Count)} statlines, {extracted.Sum(u => u.Weapons.Sum(w => w.Weapons.Count))} weapon profiles");
+        foreach (var w in warnings) Console.WriteLine("  warning: " + w);
+        var sample = Opt("--unit");
+        var show = extracted.FirstOrDefault(u => string.Equals(u.DisplayName, sample, StringComparison.OrdinalIgnoreCase));
+        if (show is not null) Console.WriteLine(JsonSerializer.Serialize(show, new JsonSerializerOptions { WriteIndented = true }));
+        continue;
+    }
     Console.WriteLine($"{name,-40} units={units.Count,3} (imported {units.Count(u => u.Imported)})");
 }
 return 0;
