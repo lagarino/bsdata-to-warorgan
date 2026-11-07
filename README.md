@@ -141,8 +141,8 @@ Every phase of the converter ships with tests; see [docs/05-plan](docs/05-plan.m
 | Stratagems (optional download from a third-party website, local cache) | planned |
 | Settings file and cache commands | planned |
 
-Eleven catalogues of the first target convert and pass the builder's validation. Two of them have been checked by hand
-in the app; the others have not been checked unit by unit.
+Eleven catalogues of the first target convert and pass the builder's validation and the stricter integration checks. Two of
+them have been checked by hand in the app; the others have not been checked unit by unit.
 
 Known limits: options that are only shown under certain conditions (a selected detachment, another option) are not
 evaluated beyond the cases above, so the result is the baseline view; "choose N of these" groups become optional

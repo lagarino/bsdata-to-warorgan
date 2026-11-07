@@ -35,11 +35,11 @@ public sealed class DetachmentExtractor(BsdDatabase db)
         var primaryId = BsdDatabase.Str(root, "id");
         // Detachments and enhancements may sit in the catalogue itself or in a library it links (a library serves several catalogues
         // and hides what belongs to the others by the primary catalogue).
+        // Only libraries this roster's own units come from: an allied library (imported units) belongs to the other army.
         var sources = new List<JsonObject> { root };
-        foreach (var l in BsdDatabase.Arr(root, "catalogueLinks"))
-            if (BsdDatabase.Str(l, "targetId") is { } tid && db.Roots.FirstOrDefault(kv => BsdDatabase.Str(kv.Value, "id") == tid) is { Value: not null } lib
-                && !Scope.IsExcludedFile(lib.Key) && lib.Value["library"] is JsonValue lv && lv.TryGetValue<bool>(out var isLib) && isLib)
-                sources.Add(lib.Value);
+        foreach (var owner in resolved.Select(r => r.OwnerFile).Distinct().Where(f => f != catalogueFile))
+            if (db.Roots.TryGetValue(owner, out var lib) && !Scope.IsExcludedFile(owner) && lib["library"] is JsonValue lv && lv.TryGetValue<bool>(out var isLib) && isLib)
+                sources.Add(lib);
         var detachments = new List<(JsonObject Entry, Detachment Model)>();
         var allDetachmentIds = new HashSet<string>();
 
@@ -185,7 +185,7 @@ public sealed class DetachmentExtractor(BsdDatabase db)
             foreach (var m in HideModifiers(holder))
             {
                 foreach (var c in AllConditions(m))
-                    if (BsdDatabase.Str(c, "type") == "lessThan" && BsdDatabase.Str(c, "childId") is { } id && detachmentIds.Contains(id) && !owners.Contains(id))
+                    if (IsNotSelected(c) && BsdDatabase.Str(c, "childId") is { } id && detachmentIds.Contains(id) && !owners.Contains(id))
                         owners.Add(id);
                 Analyse(m, carriers, elig, selfId, detachmentIds);
             }
@@ -193,6 +193,11 @@ public sealed class DetachmentExtractor(BsdDatabase db)
         if (forcedUnit is not null) AddUnique(e.RequiredUnitNames, forcedUnit);
 
         if (!isUpgrade && text is not null) AddKeywordsFromText(e, text, units);
+        if (text is not null && e.RequiredUnitNames.Count == 0 && AddUnitsFromText(e, text, units) == UnitText.Unresolved)
+        {
+            warnings.Add($"enhancement '{name}': restricted to a unit that is not in this roster; left out");
+            return null;
+        }
         if (isUpgrade && e.RequiredUnitNames.Count == 0 && e.RequiredKeywords.Count == 0 && e.RequiredOneOfKeywords.Count == 0 && e.ExcludedKeywords.Count == 0)
             warnings.Add($"upgrade enhancement '{name}': no unit restriction found; it will be offered to every unit when filtering is off");
         return e;
@@ -219,6 +224,23 @@ public sealed class DetachmentExtractor(BsdDatabase db)
             if (hit is not null) AddUnique(e.RequiredKeywords, hit);
             i += Math.Max(1, used);
         }
+    }
+
+    /// <summary>"**NAME** unit only.": the words before "unit only" name a unit of the roster (or else keywords).</summary>
+    private enum UnitText { NoPattern, Resolved, Unresolved }
+
+    private static UnitText AddUnitsFromText(Enhancement e, string text, IReadOnlyList<Unit> units)
+    {
+        var match = Regex.Match(text, @"^\s*([^.:\r\n]{1,80}?)\s+unit only", RegexOptions.IgnoreCase);
+        if (!match.Success) return UnitText.NoPattern;
+        var phrase = Regex.Replace(match.Groups[1].Value.Replace("*", " "), @"\s+", " ").Trim();
+        var unit = units.FirstOrDefault(u => string.Equals(u.DisplayName, phrase, StringComparison.OrdinalIgnoreCase));
+        if (unit is not null) { AddUnique(e.RequiredUnitNames, unit.Id); return UnitText.Resolved; }
+        var known = units.SelectMany(u => u.Keywords.Concat(u.FactionKeywords)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var keyword = known.FirstOrDefault(k => k.Equals(phrase, StringComparison.OrdinalIgnoreCase));
+        if (keyword is null) return UnitText.Unresolved;
+        AddUnique(e.RequiredKeywords, keyword);
+        return UnitText.Resolved;
     }
 
     /// <summary>Reads who may take an enhancement out of a "hidden when ..." modifier (the negation of the eligible units).</summary>
@@ -321,6 +343,11 @@ public sealed class DetachmentExtractor(BsdDatabase db)
             if (!linked && isCharacter) units[i].Flags |= UnitFlags.NoEnhancements;
         }
     }
+
+    /// <summary>"The detachment is not selected": fewer than one, or exactly (at most) none.</summary>
+    private static bool IsNotSelected(JsonObject c) =>
+        BsdDatabase.Str(c, "type") is "lessThan" ||
+        (BsdDatabase.Str(c, "type") is "equalTo" or "atMost" && c["value"]?.ToString() is "0");
 
     private static bool MentionsKnownDetachment((JsonObject Node, List<JsonObject> Chain) entry, HashSet<string> ids) =>
         entry.Chain.Append(entry.Node).SelectMany(HideModifiers).SelectMany(AllConditions)

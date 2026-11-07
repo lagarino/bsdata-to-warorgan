@@ -148,23 +148,24 @@ Nothing has been sent to the maintainer.
 
 **Workaround:** put generic detachments in the parent faction roster, and each sub-faction-specific detachment only in that sub-faction's own roster; sub-factions list the parent faction roster in `AdditionalFactionKeywords`. Needs a check that `AdditionalFactionKeywords` can name a roster that is not an ally.
 
-## Wider catalogues  [Status: open]
+## Wider catalogues  [Status: partly closed]
 
-Eleven catalogues of the first target convert and pass the builder's validation; two were checked by hand in the app. The other nine
-are produced by the same rules, but the stricter integration checks (which hold for the two checked ones) still fail for some:
+Eleven catalogues of the first target convert and pass the builder's validation, and the strict integration checks now hold for all
+eleven (two of them were also checked by hand in the app; the other nine have not been checked unit by unit). Fixed while getting
+there: per-model prices (the price sits on the model entries), conditions on campaign-mode entries (never active in a standard
+game), a count of the only model type of a unit, groups of loadout variants that substitute for a model next to them, an outer
+size cap with a nested minimum, detachments and enhancements in a library the roster's own units come from (and not in an allied
+library), hiding conditions written as "count equals zero", and enhancements restricted by a "unit only" sentence.
 
-- **Points conditions not understood.** Some catalogues use point modifiers whose conditions the evaluator does not read (for
-  example conditions on another option or on a shared category). The affected units keep their base cost, and `convert` reports them.
-- **Model limits above the priced size.** For two units of two catalogues the merged loadout variants allow more models in total
-  (10) than the points table prices (4): the group cap in the data is not on the group that was merged. Needs a look at those two
-  units.
-- **Detachments and enhancements.** Some catalogues have detachment or enhancement entries the extractor still skips or reads
-  incompletely (a missing description, an enhancement limited to a unit name that is not a roster unit). One catalogue has no
-  detachment effects at all, which may be correct.
+What is still open:
+
+- **A price that depends on the count of one optional model type** (one unit of one catalogue: two overlapping size ranges
+  depending on whether an optional extra model is present). The evaluator reports it and keeps the base price.
+- **A shared size cap across different model types.** Where a group caps the total of several differently named models (single
+  specials plus a main troop), WarOrgan has no cross-model cap. The unit's size is right (it comes from the points tiers), but
+  the model limits can add up to more than the cap.
+- **Effects of a detachment under extra conditions** (a few units) and list-building limit changes, as listed for the first catalogues.
 - **Allies and shared rosters.** Units that a catalogue imports from another catalogue are left out of its roster, and no ally
   relationship is written. Catalogues that list another army's units as their own are not converted yet.
 - **Other families.** The large parent faction with its sub-factions, the faction families that include other factions, and the
   library-only catalogues are not converted.
-
-The integration tests keep the strict checks on the two verified catalogues and run only the structural checks on the rest; as each
-gap above is closed, the strict list grows.

@@ -29,7 +29,7 @@ public sealed class UnitExtractor(BsdDatabase db)
         unit.UnitComposition.ModelCompositions.AddRange(comp.Models);
         new WargearExtractor(db).Apply(unit, entry, comp, warnings);
         VariantMerger.Merge(unit, comp, warnings);
-        var pts = new PointsExtractor().Extract(entry, name, comp.MinModels, comp.MaxModels);
+        var pts = new PointsExtractor().Extract(entry, name, comp.MinModels, comp.MaxModels, PointsContext(entry, comp, name, warnings));
         unit.Points.AddRange(pts.Points);
         foreach (var u in pts.Unsupported) warnings.Add($"{name}: points: unsupported {u}");
         // A statline no model refers to would be rejected by the builder; show it on the datasheet anyway.
@@ -37,6 +37,26 @@ public sealed class UnitExtractor(BsdDatabase db)
             line.Features |= StatFeature.AlwaysShow;
         if (unit.StatLines.Count == 0) warnings.Add($"{name}: no unit profile found");
         return unit;
+    }
+
+    /// <summary>Per-model cost (when the unit entry has none) and the names that stand for "all models" of a one-model-type unit.</summary>
+    private PointsExtractor.Context PointsContext(JsonObject unitEntry, CompositionExtractor.Result comp, string unitName, List<string> warnings)
+    {
+        var modelCosts = comp.Sources.Values.Select(m => BsdDatabase.Arr(m, "costs").Where(c => BsdDatabase.Str(c, "typeId") == PointsExtractor.PtsTypeId)
+                .Select(c => c["value"] is JsonValue v && v.TryGetValue<double>(out var d) ? (int)d : 0).FirstOrDefault())
+            .Where(c => c > 0).Distinct().Order().ToList();
+        var unitCost = BsdDatabase.Arr(unitEntry, "costs").Where(c => BsdDatabase.Str(c, "typeId") == PointsExtractor.PtsTypeId)
+            .Select(c => c["value"] is JsonValue v && v.TryGetValue<double>(out var d) ? (int)d : 0).FirstOrDefault();
+        int? perModel = unitCost > 0 || modelCosts.Count == 0 ? null : modelCosts[0];
+        if (perModel is not null && modelCosts.Count > 1)
+            warnings.Add($"{unitName}: models cost different amounts ({string.Join(", ", modelCosts)}); every model priced at {modelCosts[0]}");
+        var whole = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (comp.Models.Count == 1)
+        {
+            whole.Add(unitName);
+            foreach (var m in comp.Sources.Values) if (BsdDatabase.Str(m, "name") is { } n) whole.Add(n.Trim());
+        }
+        return new PointsExtractor.Context(db.Name, whole, perModel);
     }
 
     /// <summary>Rule ids linked by the roster's units, with the number of units linking each.</summary>

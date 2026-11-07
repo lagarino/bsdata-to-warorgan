@@ -58,7 +58,9 @@ public sealed class CompositionExtractor(BsdDatabase db)
     /// <summary>Collects models directly under the node and inside groups; groups without models of their own are descended into.</summary>
     private void Process(JsonObject node, List<ModelComposition> models, ref int min, ref int max, string unitName)
     {
-        foreach (var child in Children(node))
+        var siblings = Children(node).ToList();
+        var variantsOf = new Dictionary<JsonObject, JsonObject>();   // variant group -> the base model entry it substitutes for
+        foreach (var child in siblings)
         {
             if (BsdDatabase.Str(child, "type") == "model")
             {
@@ -73,6 +75,26 @@ public sealed class CompositionExtractor(BsdDatabase db)
                 var inner = Children(child).Where(c => BsdDatabase.Str(c, "type") == "model").ToList();
                 if (inner.Count == 0) { Process(child, models, ref min, ref max, unitName); continue; }
                 var (gmn, gmx) = Limits(child);
+                // A group without a size of its own whose default is a model entry next to it holds substitutions for that model:
+                // its models come out of the base model's count and add nothing to the unit's size.
+                var defaultId = BsdDatabase.Str(child, "defaultSelectionEntryId");
+                var baseModel = gmn is null && gmx is null && defaultId is not null
+                    ? siblings.FirstOrDefault(c => BsdDatabase.Str(c, "type") == "model" && BsdDatabase.Str(c, "id") == defaultId) : null;
+                if (baseModel is not null)
+                {
+                    variantsOf[child] = baseModel;
+                    var (bmn, bmx) = Limits(baseModel);
+                    foreach (var model in inner)
+                    {
+                        var (mn, mx) = Limits(model);
+                        var composed = Compose(model, BsdDatabase.Str(model, "name") ?? unitName, mn ?? 0, mx ?? bmx ?? 0);
+                        models.Add(composed);
+                        _members[composed] = new Member(child, null, bmn ?? 0, bmx, null, false);
+                    }
+                    foreach (var sub in Children(child).Where(c => IsGroup(c)))
+                        AddNested(sub, models, unitName, child, bmn ?? 0, bmx);
+                    continue;
+                }
                 int sumMin = 0, sumMax = 0;
                 foreach (var model in inner)
                 {
@@ -90,12 +112,23 @@ public sealed class CompositionExtractor(BsdDatabase db)
                     _members[composed] = new Member(child, null, gmn, gmx, null, BsdDatabase.Str(child, "defaultSelectionEntryId") == BsdDatabase.Str(model, "id"));
                     sumMin += lo; sumMax += hi;
                 }
-                min += gmn ?? sumMin;
-                max += gmx is { } gx ? Math.Min(gx, sumMax) : sumMax;
                 // Sub-groups of variant models (for example "Special Weapons") are counted inside the parent group's total.
+                // When the parent has no minimum of its own, the minimums of the nested groups make it (a nested "4 or more" group).
+                var nestedMin = Children(child).Where(c => IsGroup(c)).Sum(sub => Limits(sub).Min ?? 0);
+                var nestedMax = Children(child).Where(c => IsGroup(c)).Sum(sub => Limits(sub).Max ?? 0);
+                min += gmn ?? sumMin + nestedMin;
+                max += gmx is { } gx ? gx : sumMax + nestedMax;
                 foreach (var sub in Children(child).Where(c => IsGroup(c)))
                     AddNested(sub, models, unitName, child, gmn, gmx);
             }
+        }
+        // The base model of a substitution group joins that group so the loadouts can be merged into it.
+        foreach (var (group, baseEntry) in variantsOf)
+        {
+            var composition = _sources.FirstOrDefault(kv => ReferenceEquals(kv.Value, baseEntry)).Key;
+            if (composition is null) continue;
+            var (bmn, bmx) = Limits(baseEntry);
+            _members[composition] = new Member(group, null, bmn ?? 0, bmx, null, true);
         }
     }
 
