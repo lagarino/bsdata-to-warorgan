@@ -140,6 +140,33 @@ public class IntegrationTests
 
     [IntegrationTheory]
     [MemberData(nameof(Factions))]
+    public void Detachment_effects_name_real_units_and_weapons_and_their_keywords_have_rule_text(string file)
+    {
+        var db = Database.Value;
+        var settings = new WarOrganConverter.Emit.BuildSettings("Effect Test", new Version(1, 0, 0, 0),
+            Path.Combine(Path.GetTempPath(), "bsdata-to-warorgan-tests", Guid.NewGuid().ToString("N")), [Path.GetFileNameWithoutExtension(file)]);
+        var model = WarOrganConverter.Emit.DatasetBuilder.Build(db, settings, new WarOrganConverter.Emit.BuildReport());
+        var roster = model.Rosters.Single().Roster;
+        var units = roster.Units.ToDictionary(u => u.Id);
+        var regexes = model.Definition.WeaponAbilities.Select(a => new System.Text.RegularExpressions.Regex(a.Regex, System.Text.RegularExpressions.RegexOptions.IgnoreCase)).ToList();
+        var effects = roster.Detachments.SelectMany(d => d.Effects).ToList();
+        Assert.NotEmpty(effects);
+        foreach (var e in effects)
+            foreach (var id in e.AffectedUnits)
+            {
+                Assert.True(units.ContainsKey(id), $"effect names unknown unit {id}");
+                var weapons = units[id].Weapons.SelectMany(w => w.Weapons).Select(w => w.Id!).ToHashSet();
+                foreach (var adj in e.WeaponStatAdjustments ?? [])
+                {
+                    Assert.All(adj.NameFilter!, n => Assert.Contains(n, weapons));
+                    if (adj.TargetStatId == "Keywords")
+                        Assert.All(WarOrganConverter.Emit.AbilityDefinitions.SplitKeywords(adj.Value), k => Assert.Contains(regexes, r => r.IsMatch(k)));
+                }
+            }
+    }
+
+    [IntegrationTheory]
+    [MemberData(nameof(Factions))]
     public void Wargear_ids_resolve_and_every_weapon_is_selectable(string file)
     {
         var (units, warnings) = ExtractAll(file);

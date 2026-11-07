@@ -95,7 +95,9 @@ public static class DatasetBuilder
             BattleSizeDefinitions = BattleSizes(),
             CoreAbilities = AbilityDefinitions.Build(rosters.SelectMany(r => r.Units).SelectMany(u => u.CoreAbilities), rules, unmatched),
             WeaponAbilities = AbilityDefinitions.Build(
-                rosters.SelectMany(r => r.Units).SelectMany(u => u.Weapons).SelectMany(s => s.Weapons).SelectMany(w => AbilityDefinitions.SplitKeywords(w.Keywords)),
+                rosters.SelectMany(r => r.Units).SelectMany(u => u.Weapons).SelectMany(s => s.Weapons).SelectMany(w => AbilityDefinitions.SplitKeywords(w.Keywords))
+                    .Concat(rosters.SelectMany(r => r.Detachments).SelectMany(d => d.Effects).SelectMany(e => e.WeaponStatAdjustments ?? [])
+                        .Where(a => a.TargetStatId == "Keywords").SelectMany(a => AbilityDefinitions.SplitKeywords(a.Value))),
                 rules, unmatched),
         };
         var present = rosters.SelectMany(r => r.Units).SelectMany(u => u.Keywords).ToHashSet(StringComparer.Ordinal);

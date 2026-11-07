@@ -91,6 +91,8 @@ public sealed class DetachmentExtractor(BsdDatabase db)
                     }
                 }
 
+        new DetachmentEffectExtractor(db).Apply(resolved, units, detachments, warnings);
+
         MarkUnitsWithoutEnhancements(resolved, units, containerIds);
         return detachments.Select(d => d.Model).ToList();
     }
