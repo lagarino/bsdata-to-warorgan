@@ -25,6 +25,8 @@ public sealed class PointsExtractor
     private static bool IsOutOfScopeMode(string? name) =>
         name is not null && (name.Contains("Crusade", StringComparison.OrdinalIgnoreCase) || name.Contains("Boarding Actions", StringComparison.OrdinalIgnoreCase));
 
+    private static readonly System.Text.RegularExpressions.Regex SizeUpgrade = new(@"^\s*(\d+)\s+models?\s*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
     public sealed record Result(List<PointsDefinition> Points, List<string> Unsupported);
 
     public Result Extract(JsonObject unitEntry, string unitName, int minModels, int maxModels, Context? context = null)
@@ -170,6 +172,10 @@ public sealed class PointsExtractor
         var childName = child is null or "model" or "any" ? null : context?.NameOf(child);
         if (IsOutOfScopeMode(childName))
             return BsdDatabase.Str(c, "type") is "notInstanceOf" or "lessThan" or "atMost" or "equalTo" && (c["value"]?.ToString() is "0" || BsdDatabase.Str(c, "type") != "equalTo");
+        // A unit size chosen through an upgrade entry named "10 models": selected when the unit has that many models.
+        if (field == "selections" && childName is not null && SizeUpgrade.Match(childName) is { Success: true } sz && c["value"] is JsonValue sv && sv.TryGetValue<double>(out var svd)
+            && scope is not ("force" or "roster" or "primary-catalogue" or "root-entry"))
+            return Compare(BsdDatabase.Str(c, "type"), s.Models == int.Parse(sz.Groups[1].Value) ? 1 : 0, svd);
         // The count of the one kind of model a unit has is the unit's model count.
         if (field == "selections" && childName is not null && context!.WholeUnitNames.Contains(childName) && c["value"] is JsonValue wv && wv.TryGetValue<double>(out var wd)
             && scope is not ("force" or "roster" or "primary-catalogue" or "root-entry" or "parent"))

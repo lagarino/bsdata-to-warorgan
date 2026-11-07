@@ -23,6 +23,7 @@ public static class RosterExtractor
         var catalogueName = BsdDatabase.Str(db.Roots[catalogueFile], "name") ?? "";
         var shortName = (catalogueName.IndexOf(" - ", StringComparison.Ordinal) is var i and >= 0 ? catalogueName[(i + 3)..] : catalogueName).Trim();
         var ownKeyword = all.SelectMany(r => FactionKeywords(db, r.Entry)).FirstOrDefault(k => k.Equals(shortName, StringComparison.OrdinalIgnoreCase))
+            ?? LibraryKeyword(db, all, shortName)
             ?? all.Where(r => !r.Imported).SelectMany(r => FactionKeywords(db, r.Entry)).GroupBy(k => k)
                 .OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
         var resolved = all.Where(r => !r.Imported || includeImported || (ownKeyword is not null && FactionKeywords(db, r.Entry).Contains(ownKeyword))).ToList();
@@ -44,4 +45,9 @@ public static class RosterExtractor
     private static List<string> FactionKeywords(BsdDatabase db, System.Text.Json.Nodes.JsonObject entry) =>
         BsdDatabase.Arr(entry, "categoryLinks").Select(l => db.Name(BsdDatabase.Str(l, "targetId"))?.Trim())
             .Where(n => n is not null && n.StartsWith("Faction: ", StringComparison.Ordinal)).Select(n => n!["Faction: ".Length..].Trim()).ToList();
+
+    /// <summary>The keyword of the units of a library named after the catalogue ("Chaos Daemons" and "Chaos - Chaos Daemons Library").</summary>
+    private static string? LibraryKeyword(BsdDatabase db, IReadOnlyList<ResolvedUnit> all, string shortName) =>
+        all.Where(r => r.Imported && Path.GetFileNameWithoutExtension(r.OwnerFile).Contains(shortName + " Library", StringComparison.OrdinalIgnoreCase))
+            .SelectMany(r => FactionKeywords(db, r.Entry)).GroupBy(k => k).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
 }

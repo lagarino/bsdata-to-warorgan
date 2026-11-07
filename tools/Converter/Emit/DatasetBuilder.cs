@@ -81,7 +81,11 @@ public static class DatasetBuilder
             foreach (var w in warnings) report.Warnings.Add($"{roster.Name}: {w}");
             rosters.Add(roster);
             allyUnits.Add((roster.Name, extracted.ImportedByFaction ?? []));
-            factions.Add(FactionFor(catalogueName, roster));
+            var factionInfo = FactionFor(catalogueName, roster);
+            // A datasheet with no faction category (some characters) belongs to the roster it is listed in; the builder needs a keyword.
+            foreach (var unit in roster.Units.Where(u => u.FactionKeywords.Count == 0))
+                unit.FactionKeywords.Add(factionInfo.FactionKeyword);
+            factions.Add(factionInfo);
             report.Units += roster.Units.Count;
         }
         if (rosters.Count == 0) throw new InvalidOperationException("No catalogues matched; nothing to convert.");

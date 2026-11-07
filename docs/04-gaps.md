@@ -172,5 +172,8 @@ What is still open:
   catalogue must be part of the same conversion; otherwise the units are left out and `convert` says so. Open: allied points caps
   (`ArmyPercentageRestriction`, not in the source data), the higher points of some units when allied (G1), and a library with no
   matching faction catalogue (for example a titans library).
+- **Leaders in the four legion catalogues of the chaos set.** Their own files carry no leader associations, so those factions' characters
+  have no leader information (they cannot be attached to units). The parent catalogue of that set does have them. Not converted.
+- **Datasheets without a faction category** (some characters) get the keyword of the roster they are listed in.
 - **Other families.** The large parent faction with its sub-factions, the faction families that include other factions, and the
   library-only catalogues are not converted.

@@ -33,7 +33,9 @@ public class IntegrationTests
     public static IEnumerable<object[]> AllFactions =>
         Factions.Concat([["T'au Empire.json"], ["Leagues of Votann.json"], ["Imperium - Grey Knights.json"],
          ["Imperium - Adepta Sororitas.json"], ["Aeldari - Craftworlds.json"], ["Aeldari - Drukhari.json"], ["Tyranids.json"],
-         ["Imperium - Adeptus Custodes.json"], ["Imperium - Adeptus Mechanicus.json"]]);
+         ["Imperium - Adeptus Custodes.json"], ["Imperium - Adeptus Mechanicus.json"],
+         ["Imperium - Imperial Knights.json"], ["Imperium - Agents of the Imperium.json"], ["Chaos - Chaos Space Marines.json"], ["Chaos - Death Guard.json"],
+         ["Chaos - Emperor's Children.json"], ["Chaos - Thousand Sons.json"], ["Chaos - World Eaters.json"], ["Chaos - Chaos Daemons.json"], ["Chaos - Chaos Knights.json"]]);
 
     private static (List<Unit> Units, List<string> Warnings) ExtractAll(string file)
     {
@@ -115,8 +117,11 @@ public class IntegrationTests
             Assert.All(u.LeaderInfo!.UnitNames, n => Assert.Contains(n, ids));
             Assert.True(u.LeaderInfo.UnitNames.Count > 0 || u.LeaderInfo.AttachableByKeyword is { Count: > 0 }, $"{u.Id}: empty leader info");
         }
-        Assert.Contains(units, u => u.LeaderInfo is not null);
+        // Known gap: the four legion catalogues of the chaos set carry no leader associations in their own files.
+        if (!NoLeaderData.Contains(file)) Assert.Contains(units, u => u.LeaderInfo is not null);
     }
+
+    private static readonly HashSet<string> NoLeaderData = ["Chaos - Death Guard.json", "Chaos - Emperor's Children.json", "Chaos - Thousand Sons.json", "Chaos - World Eaters.json"];
 
     [IntegrationTheory]
     [MemberData(nameof(AllFactions))]
@@ -198,7 +203,10 @@ public class IntegrationTests
         var (_, warnings) = ExtractAll(file);
         // Known gap: a unit whose price depends on how many of one optional model type it has (two overlapping size ranges) cannot be
         // priced by total model count alone; the evaluator reports it. Anything else here is a regression.
-        Assert.DoesNotContain(warnings, w => w.Contains("points: unsupported") && !w.StartsWith("Windriders:", StringComparison.Ordinal));
+        // Also known (gap G1): a price that rises when the unit is taken outside its own army ("primary catalogue" conditions) is reported;
+        // the roster's own price is the one written.
+        Assert.DoesNotContain(warnings, w => w.Contains("points: unsupported") && !w.StartsWith("Windriders:", StringComparison.Ordinal)
+                                             && !(w.Contains("unsupported notInstanceOf") && w.Contains("primary-catalogue")));
     }
 
     [IntegrationFact]
