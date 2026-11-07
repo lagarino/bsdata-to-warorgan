@@ -1,5 +1,5 @@
 import json, collections
-root = json.load(open(''+__import__('os').environ.get('WH40K_SRC','../wh40k-11e')+'/Orks.json', encoding='utf-8'))['catalogue']
+root = json.load(open(''+__import__('os').environ.get('BSDATA_SRC','../bsdata')+'/Orks.json', encoding='utf-8'))['catalogue']
 def trim(o):
     if isinstance(o, dict):
         return {k: trim(v) for k, v in o.items() if k not in ('id', 'typeId', 'shared', 'import', 'includeChildSelections', 'includeChildForces', 'publicationId', 'page', 'costs', 'hidden', 'sortIndex')}

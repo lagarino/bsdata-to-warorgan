@@ -32,6 +32,9 @@ public sealed class UnitExtractor(BsdDatabase db)
         var pts = new PointsExtractor().Extract(entry, name, comp.MinModels, comp.MaxModels);
         unit.Points.AddRange(pts.Points);
         foreach (var u in pts.Unsupported) warnings.Add($"{name}: points: unsupported {u}");
+        // A statline no model refers to would be rejected by the builder; show it on the datasheet anyway.
+        foreach (var line in unit.StatLines.Where(l => !unit.UnitComposition.ModelCompositions.Any(m => m.StatlineRef == l.StatName)))
+            line.Features |= StatFeature.AlwaysShow;
         if (unit.StatLines.Count == 0) warnings.Add($"{name}: no unit profile found");
         return unit;
     }
@@ -124,7 +127,7 @@ public sealed class UnitExtractor(BsdDatabase db)
 
     private IEnumerable<WeaponSet> Weapons(JsonObject entry)
     {
-        var sets = new Dictionary<string, WeaponSet>(StringComparer.Ordinal);
+        var sets = new Dictionary<string, WeaponSet>(StringComparer.OrdinalIgnoreCase);
         foreach (var f in _walker.Profiles(entry, "Ranged Weapons", "Melee Weapons"))
         {
             var ownerName = (BsdDatabase.Str(f.Owner, "name") ?? BsdDatabase.Str(f.Profile, "name") ?? "UNKNOWN").Trim();

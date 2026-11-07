@@ -9,9 +9,13 @@ public sealed record RosterResult(IReadOnlyList<ResolvedUnit> Resolved, List<Uni
 /// <summary>Everything that is extracted for one catalogue's roster, in the order the stages depend on each other.</summary>
 public static class RosterExtractor
 {
-    public static RosterResult Extract(BsdDatabase db, string catalogueFile, List<string> warnings)
+    /// <summary>
+    /// <paramref name="includeImported"/> keeps the units a catalogue imports from allied catalogues (they are allies, not part of the
+    /// faction's own roster, so by default they are left out; Space Marine chapters need them and are not supported yet).
+    /// </summary>
+    public static RosterResult Extract(BsdDatabase db, string catalogueFile, List<string> warnings, bool includeImported = false)
     {
-        var resolved = new RosterResolver(db).Resolve(catalogueFile);
+        var resolved = new RosterResolver(db).Resolve(catalogueFile).Where(r => includeImported || !r.Imported).ToList();
         var armyRules = UnitExtractor.FindArmyRules(resolved);
         var extractor = new UnitExtractor(db);
         var units = resolved.Select(r => extractor.Extract(r, armyRules, warnings)).ToList();

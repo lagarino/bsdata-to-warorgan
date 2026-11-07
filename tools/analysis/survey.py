@@ -1,5 +1,5 @@
 import json, sys, collections, glob, os
-os.chdir(''+__import__('os').environ.get('WH40K_SRC','../wh40k-11e')+'')
+os.chdir(''+__import__('os').environ.get('BSDATA_SRC','../bsdata')+'')
 files = [f for f in glob.glob('*.json')]
 tot = collections.Counter()
 ex = collections.defaultdict(list)

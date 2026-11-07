@@ -44,7 +44,9 @@ public static class VariantMerger
                 var replaced = Subtract(baseGear.InitialWargear, variantGear?.InitialWargear ?? []);
                 var added = Subtract(variantGear?.InitialWargear ?? [], baseGear.InitialWargear);
                 var vinfo = comp.Members[variant];
-                if (added.Count > 0 || replaced.Count > 0)
+                if (added.Count == 0 && replaced.Count > 0)
+                    warnings.Add($"{unitName}: loadout '{variant.ModelName}' only removes {string.Join(", ", replaced)}; not representable, left out");
+                else if (added.Count > 0)
                 {
                     var key = (string.Join("|", replaced.Order(StringComparer.Ordinal)), (object?)vinfo.SubGroup);
                     if (!options.TryGetValue(key, out var entry))
@@ -56,12 +58,15 @@ public static class VariantMerger
                     var total = vinfo.SubGroup is not null ? vinfo.SubGroupMax ?? cap : entry.Cap + cap;
                     options[key] = (entry.Option, total, entry.Unlimited || cap >= max);
                 }
-                // Options the variant brings itself (for example a nested choice) carry over when they start from items the base has.
+                // Options the variant brings itself (for example a nested choice) carry over. When they replace gear that only
+                // the variant's own loadout has, the option can only be used after that loadout is chosen.
                 foreach (var opt in variantGear?.Options ?? [])
-                    if ((opt.Replaces ?? []).All(baseGear.InitialWargear.Contains) && !baseGear.Options.Any(o => o.AreEqual(opt)))
-                        baseGear.Options.Add(opt);
-                    else if (!(opt.Replaces ?? []).All(baseGear.InitialWargear.Contains))
-                        warnings.Add($"{unitName}: option of '{variant.ModelName}' replaces gear the merged model does not start with; dropped");
+                {
+                    if (baseGear.Options.Any(o => o.AreEqual(opt))) continue;
+                    baseGear.Options.Add(opt);
+                    if (!(opt.Replaces ?? []).All(baseGear.InitialWargear.Contains))
+                        warnings.Add($"{unitName}: an option of '{variant.ModelName}' replaces gear only that loadout has; kept on the merged model");
+                }
             }
             foreach (var (option, cap, unlimited) in options.Values)
             {
@@ -79,6 +84,30 @@ public static class VariantMerger
         }
 
         MakeNamesUnique(unit, warnings, unitName);
+        MergeOverlappingOptions(unit);
+    }
+
+    /// <summary>
+    /// The builder rejects two options that replace the same items and offer an overlapping choice. Such options are merged into one
+    /// (choices united; no cap when either has none, otherwise the larger cap).
+    /// </summary>
+    private static void MergeOverlappingOptions(Unit unit)
+    {
+        foreach (var gear in unit.UnitComposition.ModelCompositions.SelectMany(m => m.Wargear))
+        {
+            var merged = new List<WargearOption>();
+            foreach (var option in gear.Options)
+            {
+                var same = merged.FirstOrDefault(o => o.Replaces is not null && option.Replaces is not null
+                    && o.Replaces.OrderBy(x => x, StringComparer.Ordinal).SequenceEqual(option.Replaces.OrderBy(x => x, StringComparer.Ordinal))
+                    && o.Options.Any(c => option.Options.Any(c.AreEqual)));
+                if (same is null) { merged.Add(option); continue; }
+                foreach (var c in option.Options)
+                    if (!same.Options.Any(c.AreEqual)) same.Options.Add(c);
+                same.Max = same.Max is null || option.Max is null ? null : Math.Max(same.Max.Value, option.Max.Value);
+            }
+            gear.Options = merged;
+        }
     }
 
     private static void MakeNamesUnique(Unit unit, List<string> warnings, string unitName)

@@ -32,13 +32,23 @@ public sealed class DetachmentExtractor(BsdDatabase db)
         IReadOnlyList<LeaderExtractor.GatedAttachment>? gatedAttachments = null)
     {
         var root = db.Roots[catalogueFile];
+        var primaryId = BsdDatabase.Str(root, "id");
+        // Detachments and enhancements may sit in the catalogue itself or in a library it links (a library serves several catalogues
+        // and hides what belongs to the others by the primary catalogue).
+        var sources = new List<JsonObject> { root };
+        foreach (var l in BsdDatabase.Arr(root, "catalogueLinks"))
+            if (BsdDatabase.Str(l, "targetId") is { } tid && db.Roots.FirstOrDefault(kv => BsdDatabase.Str(kv.Value, "id") == tid) is { Value: not null } lib
+                && !Scope.IsExcludedFile(lib.Key) && lib.Value["library"] is JsonValue lv && lv.TryGetValue<bool>(out var isLib) && isLib)
+                sources.Add(lib.Value);
         var detachments = new List<(JsonObject Entry, Detachment Model)>();
+        var allDetachmentIds = new HashSet<string>();
 
-        foreach (var container in Named(root, "Detachment"))
+        foreach (var container in Named(sources, "Detachment"))
             foreach (var entry in UpgradeEntries(container, []))
             {
                 var name = BsdDatabase.Str(entry.Node, "name") ?? "?";
-                if (IsBoardingOnly(entry.Node)) continue;
+                if (BsdDatabase.Str(entry.Node, "id") is { } eid) allDetachmentIds.Add(eid);
+                if (IsBoardingOnly(entry.Node) || HiddenForPrimary(entry.Node, primaryId)) continue;
                 var model = BuildDetachment(entry.Node, warnings);
                 if (detachments.Any(d => d.Model.Name == model.Name)) continue;
                 detachments.Add((entry.Node, model));
@@ -54,7 +64,7 @@ public sealed class DetachmentExtractor(BsdDatabase db)
         var detachmentIds = detachments.Select(d => BsdDatabase.Str(d.Entry, "id")!).ToHashSet();
         var containerIds = new HashSet<string>();
         foreach (var name in new[] { "Enhancements", "Enhancements - Upgrades" })
-            foreach (var container in Named(root, name))
+            foreach (var container in Named(sources, name))
             {
                 if (BsdDatabase.Str(container, "id") is { } cid) containerIds.Add(cid);
                 var isUpgrade = name.EndsWith("Upgrades", StringComparison.Ordinal);
@@ -64,6 +74,7 @@ public sealed class DetachmentExtractor(BsdDatabase db)
                     if (e is null) continue;
                     if (owners.Count == 0)
                     {
+                        if (MentionsKnownDetachment(entry, allDetachmentIds)) continue;     // belongs to a detachment of another catalogue
                         warnings.Add($"enhancement '{e.Name}': no detachment found in its visibility conditions; left out");
                         continue;
                     }
@@ -311,11 +322,35 @@ public sealed class DetachmentExtractor(BsdDatabase db)
         }
     }
 
+    private static bool MentionsKnownDetachment((JsonObject Node, List<JsonObject> Chain) entry, HashSet<string> ids) =>
+        entry.Chain.Append(entry.Node).SelectMany(HideModifiers).SelectMany(AllConditions)
+            .Any(c => BsdDatabase.Str(c, "childId") is { } id && ids.Contains(id));
+
     // ---- helpers ----
 
-    private static IEnumerable<JsonObject> Named(JsonObject root, string name) =>
-        BsdDatabase.Arr(root, "sharedSelectionEntries").Concat(BsdDatabase.Arr(root, "sharedSelectionEntryGroups"))
+    private static IEnumerable<JsonObject> Named(IEnumerable<JsonObject> roots, string name) =>
+        roots.SelectMany(root => BsdDatabase.Arr(root, "sharedSelectionEntries").Concat(BsdDatabase.Arr(root, "sharedSelectionEntryGroups")))
             .Where(e => BsdDatabase.Str(e, "name") == name);
+
+    /// <summary>
+    /// A library entry hidden by "the primary catalogue is (not) X": hidden when that is the case for this catalogue.
+    /// Only modifiers made of such conditions alone are read.
+    /// </summary>
+    private bool HiddenForPrimary(JsonObject entry, string? primaryId)
+    {
+        foreach (var m in HideModifiers(entry))
+        {
+            var conditions = AllConditions(m).ToList();
+            if (conditions.Count == 0 || !conditions.All(c => BsdDatabase.Str(c, "scope") == "primary-catalogue")) continue;
+            foreach (var c in conditions)
+            {
+                var isThis = BsdDatabase.Str(c, "childId") == primaryId;
+                if (BsdDatabase.Str(c, "type") == "instanceOf" && isThis) return true;
+                if (BsdDatabase.Str(c, "type") == "notInstanceOf" && !isThis) return true;
+            }
+        }
+        return false;
+    }
 
     /// <summary>All "upgrade" entries below a node (through nested groups and entries), with the chain of ancestors.</summary>
     private IEnumerable<(JsonObject Node, List<JsonObject> Chain)> UpgradeEntries(JsonObject container, List<JsonObject> chain)

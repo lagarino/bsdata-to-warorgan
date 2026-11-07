@@ -1,5 +1,5 @@
 import json
-d = json.load(open(''+__import__('os').environ.get('WH40K_SRC','../wh40k-11e')+'/Warhammer 40,000.json', encoding='utf-8'))['gameSystem']
+d = json.load(open(''+__import__('os').environ.get('BSDATA_SRC','../bsdata')+'/Warhammer 40,000.json', encoding='utf-8'))['gameSystem']
 f = d['forceEntries'][0]
 names = {'1d6e-2579-8e7f-1ed4': 'BoardingActions', 'cac3-71d1-ea4b-795d': 'Crusade', 'd62d-db22-4893-4bc0': 'Incursion', 'baf8-997f-e323-a090': 'StrikeForce', '4204-82d0-908c-a62a': 'Onslaught'}
 print([ (c['field'], c['type'], c['value']) for c in f['constraints']])

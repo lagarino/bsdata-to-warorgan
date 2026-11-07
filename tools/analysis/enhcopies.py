@@ -1,5 +1,5 @@
 import json, glob, os, collections
-src = os.environ.get('WH40K_SRC', '../wh40k-11e')
+src = os.environ.get('BSDATA_SRC', '../bsdata')
 ENH = 'f759-1bc4-cb3a-f0d2'
 tot = collections.Counter(); ex = collections.defaultdict(list)
 for f in sorted(glob.glob(src + '/*.json')):

@@ -1,10 +1,10 @@
 # Stratagems
 
-**Status: source and acquisition method chosen (D12, D13), nothing built yet.** BSData wh40k-11e has no stratagem entries (only prose in abilities that mentions
-them). The user pointed to **Wahapedia (11th edition)** as the source:
+**Status: source and acquisition method chosen (D12, D13), nothing built yet.** The first-target BSData catalogue set has no stratagem entries (only prose in abilities that mentions
+them). The user pointed to **Wahapedia (current edition)** as the source:
 
-- Core stratagems: `https://wahapedia.ru/wh40k11ed/the-rules/core-rules/#Core-Stratagems` (they apply to every army and detachment).
-- Detachment stratagems: on each faction page, `https://wahapedia.ru/wh40k11ed/factions/<faction>/`, in each detachment's section;
+- Core stratagems: the site's core-rules page (core stratagems section) (they apply to every army and detachment).
+- Detachment stratagems: on each faction page, each faction page of the site, in each detachment's section;
   they apply only when the army has selected that detachment.
 
 ## Target shape
@@ -21,16 +21,16 @@ Retrieved by a sub-agent through a fetch tool that returns **model-written summa
 
 | Topic | Finding |
 | --- | --- |
-| Core stratagems | 10 *(summary)*: Command Re-roll, Epic Challenge, Insane Bravery, Explosives, Crushing Impact, Rapid Ingress, Fire Overwatch, Smokescreen, Heroic Intervention, Counteroffensive; CP cost 1 except Counteroffensive (2); one type label "Core Stratagem" (no Battle Tactic / Epic Deed ... labels) |
+| Core stratagems | 10 *(summary)*: Rule 24, Rule 25, Rule 26, Rule 31, Rule 30, Rule 27, Rule 28, Rule 29, Rule 22, Rule 23; CP cost 1 except Rule 23 (2); one type label "Core Stratagem" (no Battle Tactic / Epic Deed ... labels) |
 | Entry layout | Name; "NCP" line; type label; flavour sentence (not needed); bold **WHEN**, **TARGET**, **EFFECT**; **RESTRICTIONS** where present. Timing uses turn-timing icons explained in a "Stratagems Key" image |
-| Variants | A "+1CP" line followed by alternative modes (core Heroic Intervention; Bully Boyz *Hulking Brutes*), and EFFECT bullets with "Or:" alternatives (Orks *Mow 'Em Down*, *Close-Range Dakka*) -> `StratagemOption` |
-| Detachment stratagems | 3 to 6 per detachment (verified for Orks: War Horde 6, Green Tide 3, Bully Boyz 3, Runt Swarm 3, Shoota Boyz 3, Taktikal Brigade 3; one Runt Swarm stratagem costs 2CP); type label is "<Detachment> Stratagem" |
-| Detachment list | Orks: 15 detachments on Wahapedia **all match BSData names exactly**. BSData lists two more (`Ramship Raiders`, `Kaptin Killers`): these are Boarding Actions detachments and are out of scope |
+| Variants | A "+1CP" line followed by alternative modes (core Rule 22; Unit 8 *Rule 16*), and EFFECT bullets with "Or:" alternatives (Faction AE *Rule 17*, *Rule 18*) -> `StratagemOption` |
+| Detachment stratagems | 3 to 6 per detachment (verified for Faction AE: Detachment 3 6, Detachment 4 3, Unit 8 3, Detachment 5 3, Unit 7 3, Detachment 6 3; one Detachment 5 stratagem costs 2CP); type label is "<Detachment> Stratagem" |
+| Detachment list | Faction AE: 15 detachments on Wahapedia **all match BSData names exactly**. BSData lists two more (`Detachment 1`, `Detachment 2`): these are Boarding Actions detachments and are out of scope |
 | Same page also has | each detachment's rule and its enhancements with points (a useful cross-check for the BSData conversion, e.g. "Headwoppa's Killchoppa 15 pts") |
 | Anchors | detachment sections are anchored by hyphenated name (`#War-Horde`, `#Green-Tide`); sub-anchors carry per-page numeric suffixes (`#Stratagems-12`) and are not stable |
-| 11th-edition data export | not found: `https://wahapedia.ru/wh40k11ed/` answered **403** to the automated fetch; the **10th-edition** export page documents linked CSV files for datasheets, abilities and stratagems with a spec file; whether an 11th-edition export exists is unknown |
-| robots.txt | allows `/wh40k11ed/` and `/wh40k10ed/` pages (no crawl delay; it disallows underscore-suffixed work directories, old editions and search); lists `https://wahapedia.ru/wh40k11ed/SiteMap.xml` |
-| Terms | **No licence or reuse statement found** in the pages read (10th-edition Author page and footer: "(c) Vyacheslav Maltsev 2013-2026"). The 10th-edition export page recommends mentioning Wahapedia. No 11th-edition terms page could be read |
+| current-edition data export | not found: the site's current-edition root page answered **403** to the automated fetch; the **previous-edition** export page documents linked CSV files for datasheets, abilities and stratagems with a spec file; whether an current-edition export exists is unknown |
+| robots.txt | allows the current- and previous-edition pages (no crawl delay; it disallows underscore-suffixed work directories, old editions and search); lists its sitemap |
+| Terms | **No licence or reuse statement found** in the pages read (previous-edition Author page and footer: "(c) Vyacheslav Maltsev 2013-2026"). The previous-edition export page recommends mentioning Wahapedia. No current-edition terms page could be read |
 
 ## Mapping to the WarOrgan model
 
@@ -73,11 +73,11 @@ later run (no network access needed after the first successful download). Specif
 ## Tasks
 
 - [x] Decided (D13): built-in downloader with a persistent file-system cache.
-- [ ] Obtain real HTML for the core-rules page and the Orks page (one real example of each) and write the parser against it;
+- [ ] Obtain real HTML for the core-rules page and the Faction AE page (one real example of each) and write the parser against it;
       replace every *(summary)* row above with verified facts.
 - [ ] Define the stratagem schema in the converter (plain C# records mapping to the model) and a phase-normalisation table.
 - [ ] Name matching: Wahapedia detachment name -> BSData detachment name, with a report for mismatches; check faction page
       names against `FactionInfo.Name`.
-- [ ] Verify the 10 core stratagems and their costs (the summary reported "Counteroffensive 2CP", all others 1CP).
-- [ ] Check whether the 11th-edition export CSVs exist (possible later via the site's export page; not found yet).
+- [ ] Verify the 10 core stratagems and their costs (the summary reported "Rule 23 2CP", all others 1CP).
+- [ ] Check whether the current-edition export CSVs exist (possible later via the site's export page; not found yet).
 - [ ] Attribution text for the dataset README.

@@ -1,5 +1,5 @@
 import json, collections, glob, os, sys
-os.chdir(''+__import__('os').environ.get('WH40K_SRC','../wh40k-11e')+'')
+os.chdir(''+__import__('os').environ.get('BSDATA_SRC','../bsdata')+'')
 PTS = '51b2-306e-1021-d207'
 # index every entry id -> (name, type, file) across all catalogues + game system
 idx = {}

@@ -15,6 +15,8 @@ namespace WarOrganConverter.Extract;
 /// </summary>
 public sealed class WargearExtractor(BsdDatabase db)
 {
+    private readonly EntryWalker _walker = new(db);
+
     private sealed record Node(JsonObject Entry, int? Min, int? Max, string? LinkId = null);
 
     public void Apply(Unit unit, JsonObject unitEntry, CompositionExtractor.Result comp, List<string> warnings)
@@ -35,8 +37,19 @@ public sealed class WargearExtractor(BsdDatabase db)
         var selectable = comp.Models.SelectMany(m => m.Wargear)
             .SelectMany(w => w.InitialWargear.Concat(w.Options.SelectMany(o => o.Options).SelectMany(c => c.Items)))
             .ToHashSet(StringComparer.Ordinal);
-        foreach (var id in unit.Weapons.SelectMany(w => w.Weapons).Select(w => w.Id!).Distinct().Where(id => !selectable.Contains(id)))
-            warnings.Add($"{unitName}: weapon '{id}' is not part of any model's wargear");
+        // A weapon no path of options reaches would be unselectable (the builder rejects that): offer it as an optional addition to the
+        // model whose entry contains it, and say so.
+        foreach (var id in unit.Weapons.SelectMany(w => w.Weapons).Select(w => w.Id!).Distinct().Where(id => !selectable.Contains(id)).ToList())
+        {
+            var owner = comp.Models.FirstOrDefault(m => comp.Sources.TryGetValue(m, out var src)
+                    && _walker.Profiles(src, "Ranged Weapons", "Melee Weapons").Any(f => (BsdDatabase.Str(f.Owner, "name") ?? BsdDatabase.Str(f.Profile, "name") ?? "").Trim().ToLowerInvariant() == id))
+                ?? comp.Models.FirstOrDefault();
+            if (owner is null) continue;
+            var gear = owner.Wargear.FirstOrDefault() ?? new ModelWargear();
+            if (owner.Wargear.Count == 0) owner.Wargear.Add(gear);
+            gear.Options.Add(new WargearOption { Options = [new WargearChoice { Items = [id] }] });
+            warnings.Add($"{unitName}: weapon '{id}' is not reached by the datasheet's options; offered as an optional addition to '{owner.ModelName}'");
+        }
     }
 
     private void Map(JsonObject container, ModelWargear gear, Unit unit, string unitName, List<string> warnings, bool skipModels = false)
@@ -85,6 +98,13 @@ public sealed class WargearExtractor(BsdDatabase db)
 
     private void MapGroup(JsonObject group, string? groupLinkId, List<Node> items, int gmin, int? gmax, ModelWargear gear, Unit unit, string unitName, List<string> warnings)
     {
+        // Sub-groups ("Support Systems" containing "Secondary Weapons") are mapped on their own limits.
+        foreach (var sub in items.Where(i => IsGroup(i.Entry)))
+        {
+            if ((sub.Min ?? 0) == 0 && sub.Max is null) Map(sub.Entry, gear, unit, unitName, warnings, true);
+            else MapGroup(sub.Entry, sub.LinkId, Children(sub.Entry, true).ToList(), sub.Min ?? 0, sub.Max, gear, unit, unitName, warnings);
+        }
+        items = items.Where(i => !IsGroup(i.Entry)).ToList();
         var keyed = items.Select(i => (Node: i, Keys: KeysOf(i, gear, unit, unitName, warnings))).Where(x => x.Keys.Count > 0).ToList();
         if (keyed.Count == 0) return;
         var groupName = BsdDatabase.Str(group, "name");

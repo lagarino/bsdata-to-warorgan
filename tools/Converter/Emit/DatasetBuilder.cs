@@ -175,10 +175,14 @@ public static class DatasetBuilder
             ? roster.Name
             : roster.Units.SelectMany(u => u.FactionKeywords).GroupBy(k => k).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault() ?? roster.Name;
         var (main, dark) = FactionColors.TryGetValue(roster.Name, out var c) ? c : FallbackColors[roster.Name.Sum(ch => (int)ch) % FallbackColors.Length];
+        // Units that carry only another faction keyword (for example an allied army's units a catalogue lists itself) need that keyword
+        // listed, or the builder reports them as unobtainable.
+        var extra = roster.Units.Where(u => !u.FactionKeywords.Contains(keyword)).SelectMany(u => u.FactionKeywords).Distinct().ToList();
         return new FactionInfo
         {
             Name = roster.Name,
             FactionKeyword = keyword,
+            AdditionalFactionKeywords = extra.Count > 0 ? extra : null,
             Category = i >= 0 ? catalogueName[..i].Trim() : "Other",
             MainColor = main,
             DarkColor = dark,

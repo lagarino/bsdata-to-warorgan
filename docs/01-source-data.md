@@ -1,21 +1,26 @@
-# Source data: BSData/wh40k-11e
+# Source data: the first-target BSData catalogue set
 
-Cloned at `C:\Users\ruido\DevProjects\wh40k-11e` (sibling of this repo). Commit examined:
+> **A note on names.** The analysis was done on one community catalogue set for a tabletop wargame. In these documents the names of
+> factions, units, rules and detachments are replaced by neutral labels (`Faction A`, `Unit 1`, `Rule 1`, `Detachment 1`, ...), used
+> consistently across all files, so the structure and counts can be followed without naming the game. Catalogue file names and the
+> game-system file are written in the same neutral style.
+
+A local clone placed next to this repo. Commit examined:
 `11ad64c81c058e5deeccd1cb23e64a972029c7b0`.
 
 ## Files
 
 48 JSON files (BattleScribe `.cat`/`.gst` converted to JSON; the `.gitattributes` still mentions `.cat`/`.gst`).
 
-- `Warhammer 40,000.json` - the **game system** (`gameSystem`, name "Warhammer 40,000 11th Edition",
+- `<game system>.json` - the **game system** (`gameSystem`, name "<game name and edition>",
   id `sys-352e-adc2-7639-d610`, revision 18).
-- All others are **catalogues** (`catalogue`), one per faction, e.g. `Orks.json`, `Necrons.json`,
-  `Imperium - Space Marines.json`, `Imperium - Ultramarines.json`.
+- All others are **catalogues** (`catalogue`), one per faction, e.g. `Faction AE.json`, `Faction AF.json`,
+  `Category 1 - the parent faction.json`, `Category 1 - Sub-faction a.json`.
 - `... Library.json` and `Library - ....json` catalogues (`"library": true`) hold shared units imported by
-  faction catalogues: Aeldari, Chaos Daemons, Chaos Knights, Astra Militarum, Imperial Knights,
-  Tyranids, Titans, Astartes Heresy Legends.
-- Space Marine chapters (Ultramarines, Blood Angels, ...) are catalogues that link to
-  `Imperium - Space Marines.json`.
+  faction catalogues: Faction S, Faction C, Faction E, Faction Q, Faction M,
+  Faction AG, Faction AI, Faction AJ.
+- sub-faction catalogues (Sub-faction a, Sub-faction b, ...) are catalogues that link to
+  `Category 1 - the parent faction.json`.
 - `Unaligned Forces.json` is imported by many catalogues through `catalogueLinks`.
 
 Root-level shape of a catalogue: `name, id, gameSystemId, library, revision, catalogueLinks,
@@ -34,7 +39,7 @@ Counts across all catalogues (entry `type`): **470 units, 2463 models, 8863 upgr
 | `selectionEntryGroup` | A choice group, with min/max `constraints` and optional `defaultSelectionEntryId` |
 | `entryLink` | Reference (`targetId`) to a shared entry/group, optionally with its own constraints/modifiers. **Must be resolved**; most weapons are linked, not inline |
 | `infoLink` | Reference to a shared `profile` or `rule` |
-| `profiles` | Typed stat blocks (`typeName`): `Unit`, `Ranged Weapons`, `Melee Weapons`, `Abilities`, `Transport`, `Psychic Abilities`, plus ad-hoc ones (e.g. Orks `Unpredictable Genius - D6`, `Throttlerokkit Shokka Engine`) |
+| `profiles` | Typed stat blocks (`typeName`): `Unit`, `Ranged Weapons`, `Melee Weapons`, `Abilities`, `Transport`, `Psychic Abilities`, plus ad-hoc ones (e.g. Faction AE `Unpredictable Genius - D6`, `Throttlerokkit Shokka Engine`) |
 | `rules` / `sharedRules` | Named rule text (army rules, detachment rules, keyword definitions) |
 | `categoryLinks` | Keywords. `primary: true` marks the main role category (Character, Battleline, Infantry, ...). Faction keyword appears as `Faction: <Name>` |
 | `costs` | Cost per cost type (see below) |
@@ -78,16 +83,16 @@ Condition `type` values: `atLeast, atMost, greaterThan, lessThan, equalTo, notEq
 notInstanceOf, before` (the last is used in unit-count scaling). `repeats` multiplies an increment per
 matching selection. `includeChildSelections`, `scope` and `shared` change what is counted.
 
-## Game system contents (`Warhammer 40,000.json`)
+## Game system contents (`<game system>.json`)
 
-- **`forceEntries`**: `Army Roster` (plain 40k - **our scope**), `Boarding Actions`, `Crusade Force` (out of scope).
+- **`forceEntries`**: `Army Roster` (the standard game - **our scope**), `Boarding Actions`, `Crusade Force` (out of scope).
   `Army Roster` constraints: max `Detachment Points` 2 (id `95c5-effd-74f1-c8f4`, modified, see below),
   max `pts` (id `a00c-6979-992f-046b`, modified to the battle size), max `Enhancements` 2
   (id `606d-06be-c4b4-f877`, message "You cannot have more than {value} Enhancements in your army.").
   Its category links define the unit roles (Character requires min 1, Battleline, Infantry, Swarm, Mounted,
   Beast, Monster, Vehicle, Drone, Dedicated Transport, Fortification, Epic Hero, Unit) and the `Allies: ...`
-  categories: Adeptus Titanicus, Astra Militarum, Chaos Knights, Deathwatch, Heretic Astartes, Imperial Agents,
-  Imperial Knights, Legiones Daemonica, Titanicus Traitoris, Tyranids, Unaligned Forces.
+  categories: Faction Z, Faction Q, Faction E, Sub-faction f, Faction AK, Faction O,
+  Faction M, Faction AL, Faction F, Faction AG, Unaligned Forces.
 - **`sharedRules` (49)**: weapon and core abilities with rules text - Pistol, Hazardous, Leader, Support,
   Devastating Wounds, Assault, Extra Attacks, Twin-linked, Anti, Sustained Hits, Heavy, Melta, Feel No Pain,
   Blast, Precision, Indirect Fire, Lance, Lethal Hits, Ignores Cover, Rapid Fire, Torrent, Scouts,
@@ -114,22 +119,22 @@ matching selection. `includeChildSelections`, `scope` and `shared` change what i
 Read from the `Army Roster` modifiers on constraints `95c5...` (DP) and `606d...` (enhancements). The
 points cap can also be overridden to any value >= 500 (step 250).
 
-## Unit structure (worked example: Orks `Boyz`)
+## Unit structure (worked example: a squad-type unit, generic)
 
 ```
-unit "Boyz"  costs: pts 85
-  categoryLinks: Infantry, Battleline(primary), Mob, Boyz, Faction: Orks, Explosives
+unit "Squad"  costs: pts 85
+  categoryLinks: Infantry, Battleline(primary), <unit-name category>, <faction category>, <role categories>
   constraints:  selections max 6   (army-wide copy limit for Battleline, see below)
                 Leader association max 1, Support association max 1
-  entryLinks:   Crusade group, Warlord, "Enhancements - Upgrades" group
-  infoLinks:    rule "Waaagh!"
-  profiles:     Abilities x3 (Never Too Busy to Fight, Ammo Runts, Tide of Muscle)
+  entryLinks:   campaign-mode group, Warlord, "Enhancements - Upgrades" group
+  infoLinks:    rule "<army rule>"
+  profiles:     Abilities x3
   modifiers:    pts set 170 if model count > 10;  pts +10 under a unit-count 'before' condition
-  modifierGroups: Crusade, Green Tide detachment (annotates melee weapons "Sustained Hits 1"),
-                  Shoota Boyz detachment (annotates ranged weapons "Assault")
-  selectionEntryGroup "9-18 Boyz" (min 9 / max 18)
-      model "Boy" (min 6, max 18) -> entryLinks Choppa, Slugga, Shoota (min1/max1 each)
-      group "Special Weapons" (max 3, raised by modifier at >= 20 models)
+  modifierGroups: campaign-mode modifiers, and one per detachment that annotates weapons
+                  or appends weapon keywords
+  selectionEntryGroup "9-18 Squad" (min 9 / max 18)
+      model "Trooper" (min 6, max 18) -> entryLinks to weapon upgrades (min1/max1 each)
+      group "Special Weapons" (max 3, raised by a modifier at >= 20 models)
 ```
 
 Key lessons:
@@ -149,8 +154,8 @@ Counts of `pts` modifiers by what they depend on (top classes):
 | Count | Kind | Maps to |
 | --- | --- | --- |
 | 405 | `increment` conditioned on `before` + same unit/model (scaling by earlier copies); 40 of these also depend on a selected detachment | `PointsDefinition.UnitCount` (and `PointsOverride` for the 40) |
-| 258 | `set` conditioned on model count (`atLeast/greaterThan/equalTo/range`); 36 of these also depend on a selected detachment (Aeldari `Exhibition of Slaughter`, `Armoured Warhost`, `Kabalite Agonysts`) | `PointsDefinition.ModelCount` (and `PointsOverride` for the 36) |
-| 12 | `increment` conditioned on **primary catalogue** (Agents of the Imperium assassins +15 pts outside that army) | **Gap G1** |
+| 258 | `set` conditioned on model count (`atLeast/greaterThan/equalTo/range`); 36 of these also depend on a selected detachment (Faction S `Detachment 15 Slaughter`, `Armoured Warhost`, `Kabalite Agonysts`) | `PointsDefinition.ModelCount` (and `PointsOverride` for the 36) |
+| 12 | `increment` conditioned on **primary catalogue** (Faction N assassins +15 pts outside that army) | **Gap G1** |
 | >=100 | `increment/decrement` on `[Crucible]` characters' weapon choices (only the top 25 classes were printed, so this is a floor) | `WargearDefinition.Cost` (if Crucible kept; open decision O3) |
 
 The survey printed only the 25 most common modifier classes; the long tail has not been classified.
@@ -160,24 +165,24 @@ The survey printed only the 25 most common modifier classes; the long tail has n
 Why units are hidden in BSData (counts on `type: unit` entries):
 
 - Roster toggles: `Show Legends`, `Boarding Actions`, `Crusade` -> all ignored (out of scope, see "Roster toggles and content sets").
-- Library-catalogue / primary-catalogue gating (`Chaos - Daemons Library`, `Astra Militarum`,
-  `Deathwatch`, `Space Wolves`, `Agents of the Imperium`) -> faction `Allies` and `UnitIncludeRule`.
-- "Detachment selected / not selected" gating, mostly in Aeldari (units that need or exclude a detachment,
+- Library-catalogue / primary-catalogue gating (`Category 3 - summoned units Library`, `Faction Q`,
+  `Sub-faction f`, `Sub-faction e`, `Faction N`) -> faction `Allies` and `UnitIncludeRule`.
+- "Detachment selected / not selected" gating, mostly in Faction S (units that need or exclude a detachment,
   Harlequin force) -> `Detachment.RestrictedUnits` / ally `AllowedDetachments` (to be validated).
 
 ## Detachments (`tools/analysis/det.py`)
 
 263 detachments across all catalogues, all as children of a `Detachment` selectionEntryGroup in each
-catalogue (e.g. Orks group id `8b85-ad3b-752f-6502`; the group can be per-catalogue).
+catalogue (e.g. Faction AE group id `8b85-ad3b-752f-6502`; the group can be per-catalogue).
 
 - Detachment-point costs: 1 DP = 103, 2 DP = 113, 3 DP = 34, none = 13 (the `None` option).
 - Rules per detachment: 0 -> 16, 1 -> 216, 2 -> 17, 3 -> 5, 4 -> 7, 5 -> 2. Rules sit in the entry's `rules`
   (some in `profiles` / `infoLinks`). See gap G5.
 - Detachment tags are `categoryLinks` such as `Take and Hold`, `Purge the Foe`, `3DP Detachment`.
-- Enhancements are in per-detachment groups (e.g. `Green Tide Enhancements`) hidden unless that
+- Enhancements are in per-detachment groups (e.g. `Detachment 4 Enhancements`) hidden unless that
   detachment is selected; each enhancement has cost `pts` plus `Enhancements` = 1.
 - Enhancement restriction pattern: `hidden` modifier unless the root entry is one of N specific units
-  (e.g. `Wimp-kickaz`: NOBZ unit only) -> `Enhancement.RequiredUnitNames` / `RequiredKeywords`.
+  (e.g. `Rule 21`: NOBZ unit only) -> `Enhancement.RequiredUnitNames` / `RequiredKeywords`.
 - Enhancement copy limit pattern: `selections max 3` at `force` scope plus `divide` modifiers on the
   `Enhancements` cost (2 copies -> each counts 1/2, 3 copies -> each counts 1/3): same enhancement may be taken
   up to 3 times, counting once toward the enhancement cap. See gap G2.
@@ -211,8 +216,8 @@ BSData hides optional content behind roster-level "Show ..." entries and force c
 | `Crusade Force` | 584 | Out (decision) |
 | `Show Legends` | 389 | **Out: no Legends at all (D8).** 92 of 473 units are named `[Legends]` (about 19%); every one is dropped, together with anything that only exists for them |
 | `Show Crucible Characters` | 62 | Out (D6) |
-| `Show Imperial Agents`, `Show Imperial Knights`, `Show Chaos Knights`, `Show Titans`, Daemon god toggles (Khorne, Nurgle, Slaanesh, Tzeentch) | 48 / 23 / ... | **Ally visibility toggles.** Treated as "on": these allies are part of normal army building |
-| `Show White Dwarf content` | 28 | **Out (D10)**: only Crusade content: `White Dwarf Battle Traits` and `White Dwarf Crusade Relics` groups in six catalogues, Crusade agendas (e.g. Leagues of Votann), Battle Honours and Crusade relics. No units |
+| `Show Faction O`, `Show Faction M`, `Show Faction E`, `Show Faction AI`, summoned-unit god toggles (four alignment keywords) | 48 / 23 / ... | **Ally visibility toggles.** Treated as "on": these allies are part of normal army building |
+| `Show White Dwarf content` | 28 | **Out (D10)**: only Crusade content: `White Dwarf Battle Traits` and `White Dwarf Crusade Relics` groups in six catalogues, Crusade agendas (e.g. Faction V), Battle Honours and Crusade relics. No units |
 | `Show Unaligned Forces`, `Show Unaligned Fortifications` | 16 (fortifications) | Out (D9), see below |
 | `Show Killzone Upgrade: Shadowvaults content` | - | Out: a separate boxed-set mode |
 | Detachment-like toggles (`Shadow Legion`, `Iconoclast Fiefdom`, `Devoted of Ynnead`, `Armageddon` ...) | various | Most are detachment selections, handled by the detachment conversion; `Armageddon` is campaign content (out) |
@@ -235,7 +240,7 @@ Consequence: with Legends excluded (D8) and Shadowvaults out of scope, **Unalign
 Handling (D9, confirmed): do not create an Unaligned Forces faction or ally entry, and ignore `Allies: Unaligned Forces`.
 The 16 catalogues that import it need no special care beyond not following that link.
 
-Also: `Library - Astartes Heresy Legends.json` is a library of Legends-style content and falls under D8 as well
+Also: `Library - Faction AJ.json` is a library of Legends-style content and falls under D8 as well
 (to confirm when the catalogue graph is built).
 
 ## Things confirmed absent from BSData 11e
@@ -248,6 +253,6 @@ Also: `Library - Astartes Heresy Legends.json` is a library of Legends-style con
 - Contents of the `Force Disposition` group (what the options are, how they interact with detachments:
   WarOrgan has `Detachment.ForceDispositions` and `DataSetFeatures.Dispositions`).
 - Exactly how `Warlord` is encoded and whether some units are forced/forbidden warlords (maps to `UnitFlags`).
-- How army rules (faction rules like Waaagh!) are attached (`rules` on catalogue root vs `infoLinks` on units).
-- How Space Marine chapter catalogues override Space Marines units (replaced keywords? extra detachments?).
+- How army rules (faction rules like Rule 1) are attached (`rules` on catalogue root vs `infoLinks` on units).
+- How parent-faction sub-faction catalogues override the parent faction units (replaced keywords? extra detachments?).
 - Whether any weapon stat is modified by wargear choices via modifiers rather than separate profiles.

@@ -8,10 +8,10 @@ A command-line tool that converts [BattleScribe](https://battlescribe.net/) data
 tool on your own computer, against your own copy of a BSData repository, and the dataset it creates stays on your
 computer.
 
-> **Status: early development, no release yet.** The tool currently converts the **Orks** and **Necrons** catalogues of the
-> community Warhammer 40,000 11th Edition data (units, statlines, weapons, wargear, points, army rules, leaders, detachments and enhancements).
-> Allies and stratagems are not converted yet, and a few detachment effects (list-building limit changes, effects under extra conditions) are only reported. The generated dataset has been imported into WarOrgan
-> and used to build Orks and Necrons lists (checked by hand so far, not unit by unit). See [What works today](#what-works-today).
+> **Status: early development, no release yet.** The tool converts BSData catalogues for one tabletop wargame (the first
+> target of the project): units, statlines, weapons, wargear, points, army rules, leaders, detachments, enhancements and
+> detachment effects. Allies, shared multi-catalogue rosters and stratagems are not converted yet. Generated datasets
+> have been imported into WarOrgan and used to build army lists. See [What works today](#3-what-works-today).
 
 ---
 
@@ -19,38 +19,39 @@ computer.
 
 ### What you need
 
-1. **A copy of the BSData repository you want to convert.** For Warhammer 40,000 11th Edition:
+1. **A copy of the BSData repository you want to convert.** Clone it with git, or download it as a zip from GitHub and
+   unpack it:
 
    ```
-   git clone https://github.com/BSData/wh40k-11e
+   git clone <url of the BSData repository you want to convert>
    ```
 
-   (Or download the repository as a zip from GitHub and unpack it.) This is the folder you give to `--bsdata`.
-2. **The tool.** There is no prebuilt download yet, so for now you build it once (section 2 below, two commands) or run it
-   straight from the source as shown here. Running from source needs the [.NET 10 SDK](https://dotnet.microsoft.com/download).
+   This is the folder you give to `--bsdata`.
+2. **The tool.** There is no prebuilt download yet, so for now you build it once (section 2) or run it straight from
+   the source as shown here. Running from source needs the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 3. **The WarOrgan app**, to import the result.
 
 ### Run it
 
-From the root of this repository (replace the paths with your own):
+From the root of this repository (replace the paths and names with your own):
 
 ```
-dotnet run --project tools/Converter -- convert --bsdata "C:\path\to\wh40k-11e" --output "C:\path\to\output" --dataset-id "My 40k 11th" --faction Orks --faction Necrons
+dotnet run --project tools/Converter -- convert --bsdata "C:\path\to\bsdata-repo" --output "C:\path\to\output" --dataset-id "My Dataset" --faction "<catalogue name>"
 ```
 
 If you have built the standalone program (section 2) the same command is:
 
 ```
-warorgan-converter convert --bsdata "C:\path\to\wh40k-11e" --output "C:\path\to\output" --dataset-id "My 40k 11th" --faction Orks --faction Necrons
+warorgan-converter convert --bsdata "C:\path\to\bsdata-repo" --output "C:\path\to\output" --dataset-id "My Dataset" --faction "<catalogue name>"
 ```
 
 | Option | Required | Meaning |
 | --- | --- | --- |
-| `--bsdata <folder>` | yes | Your local copy of the BSData repository (the folder with the `.json` catalogue files). Can also be set with the `WH40K_SRC` environment variable. |
+| `--bsdata <folder>` | yes | Your local copy of the BSData repository (the folder with the `.json` catalogue files). Can also be set with the `BSDATA_SRC` environment variable. |
 | `--output <folder>` | yes | Where to write the dataset. Created if missing. Keep it **outside** this repository. |
 | `--dataset-id <id>` | yes | The name of the dataset inside WarOrgan, 3-30 characters: letters, digits, space and `- _ ( ) [ ]`. No default, you choose. Keep the same id when you regenerate the dataset, so existing army lists keep working. |
-| `--dataset-version <a.b.c.d>` | no | Version number, default `1.0.0.0`. Increase it whenever you publish an updated dataset to yourself. |
-| `--faction <name>` | no | Which catalogue to convert: its name (`Xenos - Orks`), its short name (`Orks`) or its file name. Repeat the option for several. Without it, every catalogue is attempted, but only Orks and Necrons are supported so far: others may fail validation until allies and chapters are done. |
+| `--dataset-version <a.b.c.d>` | no | Version number, default `1.0.0.0`. Increase it whenever you generate an updated dataset for yourself. |
+| `--faction <name>` | no | Which catalogue to convert: its name, its short name (the part after the category prefix) or its file name. Repeat the option for several. Without it, every catalogue is attempted, but only some are supported so far: others may fail validation until allies and shared rosters are done. |
 
 Other commands, for looking at the data without writing a dataset:
 
@@ -69,12 +70,11 @@ warorgan-converter extract --bsdata <folder> --faction <name> [--brief]       # 
 ### Import into WarOrgan
 
 Import the zip with WarOrgan's dataset import (the app stores imported datasets itself and they can be deleted again).
-Choose a `--dataset-id` that differs from any dataset you already have, unless you mean to replace it. Note that the app
-only enables its built-in army validation rules for datasets whose id is `Warhammer 40k 10th` or `Warhammer 40k 11th`
-(see [docs/07-app-behaviour](docs/07-app-behaviour.md)); with any other id, lists are not checked against those rules.
+Choose a `--dataset-id` that differs from any dataset you already have, unless you mean to replace it. The app enables
+its built-in army validation rules only for two specific dataset ids; see
+[docs/07-app-behaviour](docs/07-app-behaviour.md). With any other id, lists are not checked against those rules.
 
-> A generated Orks and Necrons dataset has been imported and used in the app; not every unit has been checked by
-> hand. If you find something wrong, please report what you see.
+When you regenerate a dataset, raise `--dataset-version`, and re-import it: the app picks the highest version for an id.
 
 ### Keep the result private
 
@@ -101,10 +101,10 @@ dotnet build tools/Converter
 dotnet test tests/Converter.Tests                              # unit tests on synthetic fixtures, no game data needed
 ```
 
-The integration tests run too when `WH40K_SRC` points at a BSData checkout (they are skipped otherwise):
+The integration tests run too when `BSDATA_SRC` points at a BSData checkout (they are skipped otherwise):
 
 ```
-set WH40K_SRC=C:\path\to\wh40k-11e                            # PowerShell: $env:WH40K_SRC = "C:\path\to\wh40k-11e"
+set BSDATA_SRC=C:\path\to\bsdata-repo                         # PowerShell: $env:BSDATA_SRC = "C:\path\to\bsdata-repo"
 dotnet test tests/Converter.Tests
 ```
 
@@ -126,35 +126,38 @@ Every phase of the converter ships with tests; see [docs/05-plan](docs/05-plan.m
 
 | Area | State |
 | --- | --- |
-| Load catalogues, apply scope (no Legends, Crucible, Unaligned Forces, Crusade or Boarding Actions content) | done |
-| Roster per catalogue (own units plus imported catalogues) | done |
+| Load catalogues, apply the scope rules (no legacy, campaign-mode or alternative-mode content) | done |
+| Roster per catalogue (own units; units imported from other catalogues are left out) | done |
 | Statlines, weapons (firing modes, keywords), keywords, faction keywords | done |
-| Core abilities and unit abilities, army rules | done |
-| Model compositions and points (model-count tiers, per-copy price changes) | done |
+| Core abilities, unit abilities, army rules | done |
+| Model compositions and points (model-count tiers, per-copy price changes); loadout variants merged under the group's size cap | done |
 | Wargear: starting equipment, replacement choices, additions, costs, granted abilities | done (baseline view, see below) |
+| Leaders, support units and retainers (who may join which unit), including leaders that need a specific enhancement | done |
+| Detachments (cost, force dispositions, rule text), also when they live in a shared library catalogue | done |
+| Enhancements (cost, text, who may take them), including upgrade enhancements limited to one unit | done |
+| Detachment effects on datasheets (weapon and unit stat changes, added keywords and abilities and categories, unlocked options) | done; list-building limit changes and a few effects under extra conditions are reported, not converted |
 | Dataset definition, ability lists, validation with the WarOrgan builder, zip | done |
-| Leaders, support units and retainers (who may join which unit), including leaders that need a specific enhancement to join a unit | done |
-| Detachments (cost, force dispositions, rule text) and enhancements (cost, text, who may take them) | done |
-| Detachment effects on datasheets (weapon and unit stat changes, added keywords and abilities, added categories, options a detachment unlocks) | done; list-building limit changes and a few effects under extra conditions are reported, not converted |
-| Allies and chapter rosters (for example Space Marine chapters, Knights) | planned |
+| Allies and shared rosters (catalogues that include another catalogue's units as their own) | planned |
 | Stratagems (optional download from a third-party website, local cache) | planned |
 | Settings file and cache commands | planned |
 
+Eleven catalogues of the first target convert and pass the builder's validation. Two of them have been checked by hand
+in the app; the others have not been checked unit by unit.
+
 Known limits: options that are only shown under certain conditions (a selected detachment, another option) are not
-evaluated yet, so the result is the baseline view; "choose N of these" groups become optional additions with a
-maximum. Warnings printed by `convert` list what was affected.
+evaluated beyond the cases above, so the result is the baseline view; "choose N of these" groups become optional
+additions with a maximum. Warnings printed by `convert` list what was affected.
 
 ---
 
 ## 4. Design
 
 - **Generic tool, one first target.** The converter is written against the BSData structure and the WarOrgan model, not
-  against one game. The first target is the community Warhammer 40,000 11th Edition catalogues
-  ([BSData/wh40k-11e](https://github.com/BSData/wh40k-11e)); that work drives the analysis documents and the first
+  against one game. The first target is one community catalogue set; it drives the analysis documents and the first
   mappings, and game-specific rules stay in clearly separated mapping and override files so other BSData repositories
   can be supported later.
 - **Local data only.** Output goes to a folder you choose. Nothing generated and no game data is stored in this repo.
-- **Optional stratagem source.** BSData has no stratagem entries for the first target, so the plan includes an optional
+- **Optional stratagem source.** The first target's BSData has no stratagem entries, so the plan includes an optional
   step that downloads them from a third-party website into a local cache (see [docs/06-stratagems](docs/06-stratagems.md)).
   That site states no licence, so the step is optional, for personal use only, and nothing it fetches is stored in this repo.
 
@@ -162,7 +165,7 @@ maximum. Warnings printed by `convert` list what was affected.
 
 ## 5. Documentation and analysis
 
-The analysis was done against the Warhammer 40,000 11th Edition catalogues, so the documents refer to that game.
+The analysis was done against one community catalogue set; the documents describe it in general terms.
 
 | Doc | What it holds |
 | --- | --- |
@@ -173,7 +176,7 @@ The analysis was done against the Warhammer 40,000 11th Edition catalogues, so t
 | [04-gaps](docs/04-gaps.md) | What the WarOrgan model cannot (or may not) represent, evidence and workarounds |
 | [05-plan](docs/05-plan.md) | Phased plan, converter design, testing policy, release plan |
 | [06-stratagems](docs/06-stratagems.md) | Optional stratagem source and local cache design |
-| [07-app-behaviour](docs/07-app-behaviour.md) | What the installed WarOrgan app does (read from its code): points algorithm, limits, hard-wired dataset ids |
+| [07-app-behaviour](docs/07-app-behaviour.md) | What the installed WarOrgan app does (read from its code): points algorithm, limits, built-in dataset ids |
 | [08-phase1-findings](docs/08-phase1-findings.md) | Phase 1 results: roster assembly, dispositions, army rules, keywords, modifier classes, leaders |
 | [tools/analysis](tools/analysis/README.md) | The throwaway Python scripts that produced the findings |
 
@@ -181,7 +184,7 @@ The analysis was done against the Warhammer 40,000 11th Edition catalogues, so t
 
 | Input | Version examined |
 | --- | --- |
-| BSData/wh40k-11e | commit `11ad64c81c058e5deeccd1cb23e64a972029c7b0` (2026-11-06), game system revision 18 |
+| BSData catalogue set | commit `11ad64c81c058e5deeccd1cb23e64a972029c7b0` (2026-11-06), game system revision 18 |
 | Installed WarOrgan app | exe file version 1.3.0, embedded model identical to the repo model, `DataSetFormatVersion` 1 |
 | WarOrgan.Data | commit `45f934b8efcf4c988cd2cfd124458d78f09920c7`, `DataSetFormatVersion` = 1 |
 
@@ -208,6 +211,6 @@ repo); see [docs/07-app-behaviour](docs/07-app-behaviour.md).
 ## 7. Resuming work on the project
 
 1. Read [docs/05-plan](docs/05-plan.md) for the phases and the next piece of work.
-2. Clone the BSData repository you want to convert and `WarOrgan.Data` as siblings of this repo; check out the commits
+2. Clone the BSData repository you want to convert and `WarOrgan.Data` as siblings of this repo; check out the commit
    under *Provenance* to reproduce the numbers in the analysis, or re-run `tools/analysis` on newer data.
 3. Install the .NET 10 SDK, then `dotnet test tests/Converter.Tests`.

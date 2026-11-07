@@ -53,7 +53,7 @@ public static class AbilityDefinitions
             }
             else
             {
-                regex = "^" + Regex.Escape(rule) + @"(?:[\ \-:].*)?$";
+                regex = "^" + SeparatorTolerant(rule) + @"(?:[\ \-:].*)?$";
                 description = string.IsNullOrWhiteSpace(rules[rule]) ? MissingDescription : rules[rule].Trim();
             }
             if (seen.Add(regex)) result.Add(new RegAbility { Regex = regex, Description = description });
@@ -61,9 +61,17 @@ public static class AbilityDefinitions
         return result;
     }
 
+    /// <summary>Letters and digits only, so "Twin Linked" and "Twin-linked" are the same rule.</summary>
+    private static string Key(string s) => new(s.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+
+    /// <summary>The rule name as a pattern in which spaces and hyphens may be either (so "Twin Linked" matches "Twin-linked").</summary>
+    private static string SeparatorTolerant(string rule) =>
+        string.Concat(rule.Select(ch => ch is ' ' or '-' ? @"[\ \-]?" : Regex.Escape(ch.ToString())));
+
     private static bool Covers(string ruleName, string token)
     {
         if (token.Equals(ruleName, StringComparison.OrdinalIgnoreCase)) return true;
+        if (Key(token) == Key(ruleName)) return true;
         return token.StartsWith(ruleName, StringComparison.OrdinalIgnoreCase)
                && token.Length > ruleName.Length && " -:".Contains(token[ruleName.Length]);
     }

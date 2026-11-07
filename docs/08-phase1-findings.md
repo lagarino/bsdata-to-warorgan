@@ -7,53 +7,52 @@ Adversaries, Legends, Crucible, Unaligned Forces, Shadowvaults) are applied thro
 ## 1. How a faction's roster is assembled
 
 - **A "unit" is a root-level `entryLink` whose target has `type: unit` or `type: model`.** A top-level `model` is a
-  single-model datasheet (a character, a vehicle). Libraries hold both: for example the Aeldari Library defines 48 `unit`
+  single-model datasheet (a character, a vehicle). Libraries hold both: for example the Faction R defines 48 `unit`
   and 86 `model` entries. Counting only `type=unit` undercounts by about half.
 - A faction catalogue's roster = its own root `entryLinks` (targets may sit in its own file, a library, another catalogue, or
   the game system, which contributes 2 non-unit entries: battle size and the like) **plus the root entries of every
-  catalogue it links with `importRootEntries: true`**. The import is **not transitive**: chapter catalogues list the
-  Imperial Knights Library and Agents of the Imperium explicitly even though Space Marines already imports them.
+  catalogue it links with `importRootEntries: true`**. The import is **not transitive**: sub-faction catalogues list the
+  Faction L and Faction N explicitly even though the parent faction already imports them.
 - **The ally graph is the `catalogueLinks` graph.** An imported entry whose owner catalogue differs from the roster's
   primary catalogue gets an `Allies: X` category through a `set-primary category` modifier, and is hidden unless the matching
-  roster toggle (`Show Imperial Knights`, `Show Imperial Agents`, Daemon god toggles ...) is on. We treat these toggles as on.
+  roster toggle (`Show Faction M`, `Show Faction O`, summoned-unit god toggles ...) is on. We treat these toggles as on.
 
 | Catalogue group | Roster comes from | WarOrgan shape |
 | --- | --- | --- |
-| Self-contained: Necrons, Orks, T'au Empire, Leagues of Votann, Tyranids (+ `Library - Tyranids`), Adepta Sororitas, Adeptus Custodes, Adeptus Mechanicus, Grey Knights, Agents of the Imperium | own entries | one roster per faction |
-| Aeldari: `Craftworlds`, `Drukhari` | root links into `Aeldari Library` (Craftworlds 104 entries, Drukhari 49); several entries carry a second `Faction:` keyword (Harlequins, Ynnari, Asuryani) | copy the linked entries into each roster; keep all faction keywords |
-| Chaos: Daemons, Knights, CSM, Death Guard, Emperor's Children, Thousand Sons, World Eaters, Titanicus Traitoris | own entries + `Chaos Daemons Library`, `Chaos Knights Library`, `Library - Titans`, `Chaos Space Marines` (Daemons and Knights link 31 and 17 CSM entries) | primary-roster / ally includes |
-| Astra Militarum | root links into `Astra Militarum - Library` (139 entries) | copy |
-| Genestealer Cults | own 27 + `Astra Militarum - Library` (55 AM entries with `Faction: Astra Militarum`) + `Library - Tyranids` (18) | AM and Tyranid units are part of the GSC list; model as included allies |
-| Space Marine chapters (Ultramarines, Blood Angels, Dark Angels, Black Templars, Space Wolves, Deathwatch, Imperial Fists, Iron Hands, Raven Guard, Salamanders, White Scars) | `Space Marines` (import) + a few chapter entries (Space Wolves 22, Black Templars 16, Dark Angels 16, Blood Angels 15, Ultramarines 12, others 0-3) | `IsIncludedInPrimaryRoster` ally on Space Marines |
-| Imperial Knights, Adeptus Titanicus | `Imperial Knights - Library`; `Library - Titans` | own roster, ally everywhere |
-| Dropped by scope | `Unaligned Forces`, `Library - Astartes Heresy Legends` | not converted |
+| Self-contained: Faction AF, Faction AE, Faction AC, Faction V, Faction AG (+ `Library - Faction AG`), Faction W, Faction X, Faction Y, Faction AB, Faction N | own entries | one roster per faction |
+| Faction S: `Craftworlds`, `Faction T` | root links into `Faction R` (Craftworlds 104 entries, Faction T 49); several entries carry a second `Faction:` keyword (Harlequins, Ynnari, Asuryani) | copy the linked entries into each roster; keep all faction keywords |
+| Chaos: summoned units, Knights, CSM, Faction K, Faction G, Faction I, Faction J, Faction F | own entries + `Faction B`, `Faction D`, `Faction AH`, `Faction A` (summoned units and Knights link 31 and 17 CSM entries) | primary-roster / ally includes |
+| Faction Q | root links into `Faction P` (139 entries) | copy |
+| Faction U | own 27 + `Faction P` (55 AM entries with `Faction: Faction Q`) + `Library - Faction AG` (18) | AM and faction-specific units are part of the GSC list; model as included allies |
+| sub-faction catalogues (Sub-faction a, Sub-faction b, Sub-faction c, Sub-faction d, Sub-faction e, Sub-faction f, Sub-faction g, Sub-faction h, Sub-faction i, Sub-faction j, Sub-faction k) | `the parent faction` (import) + a few sub-faction entries (Sub-faction e 22, Sub-faction d 16, Sub-faction c 16, Sub-faction b 15, Sub-faction a 12, others 0-3) | `IsIncludedInPrimaryRoster` ally on the parent faction |
+| Faction M, Faction Z | `Faction M - Library`; `Faction AH` | own roster, ally everywhere |
+| Dropped by scope | `Unaligned Forces`, `Library - Faction AJ` | not converted |
 
-Effective-roster sizes (non-Legends) are in the 25-160 range; the chapters are large because they include the Space Marines
+Effective-roster sizes (non-Legends) are in the 25-160 range; the sub-factions are large because they include the parent faction
 list plus Knights and Agents allies.
 
-### Space Marine chapters in detail
+### sub-faction catalogues in detail
 
-- The Space Marines catalogue carries **all 35 Space Marine detachments**, including chapter-specific ones (`Champions of
-  Fenris`, `Angelic Inheritors`, `Blade of Ultramar`, `Marshal's Household`, ...). Chapter catalogues add **none**.
-  Chapter-specific detachments are hidden when the primary catalogue is not that chapter (`primary-catalogue`
+- the parent faction catalogue carries **all 35 parent-faction detachments**, including sub-faction-specific ones (`Detachment 7`, `Detachment 8`, `Detachment 9`, `Detachment 10`, ...). Sub-faction catalogues add **none**.
+  Sub-faction-specific detachments are hidden when the primary catalogue is not that sub-faction (`primary-catalogue`
   `notInstanceOf`).
-- Chapter gating of Space Marine units: Black Templars hide 10 (Gladiator tanks), Space Wolves hide 4 (Tactical Squad,
-  Apothecary ...), Deathwatch shows 10 Deathwatch-only units and hides 5 (Scout Squad, Terminators ...); Dark Angels add
+- Sub-faction gating of parent-faction units: Sub-faction d hide 10 (Unit 26 tanks), Sub-faction e hide 4 (Unit 18,
+  Unit 21 ...), Sub-faction f shows 10 Sub-faction f-only units and hides 5 (Unit 19, Unit 20 ...); Sub-faction c add
   categories to 27 units.
-- Faction keywords: chapter units carry `Faction: Adeptus Astartes` plus `Faction: <Chapter>`; Deathwatch units live in the
-  Space Marines file with `Faction: Deathwatch`.
+- Faction keywords: sub-faction units carry `Faction: Faction AA` plus `Faction: <Sub-faction>`; Sub-faction f units live in the
+  the parent faction file with `Faction: Sub-faction f`.
 
 **App implications** (see [07-app-behaviour](07-app-behaviour.md)):
 
 - `FilterAndCloneBySubFactionInfo` with `IsIncludedInPrimaryRoster` keeps only units whose `FactionKeywords` has **exactly
-  one** keyword equal to the ally's keyword. Space Marine base units must therefore be emitted with a single faction
-  keyword, and chapter variants get theirs through `ReplaceFactionKeywords` in an include rule.
-- With any `UnitIncludeRules` present, only units matched by some rule are included (allowlist). Excluding a unit for a chapter
+  one** keyword equal to the ally's keyword. parent-faction base units must therefore be emitted with a single faction
+  keyword, and sub-faction variants get theirs through `ReplaceFactionKeywords` in an include rule.
+- With any `UnitIncludeRules` present, only units matched by some rule are included (allowlist). Excluding a unit for a sub-faction
   = leave it out of every rule's `AffectedUnitsFilter` (or use `ExcludeKeywordFilter`); `RemainingUnits` adds the rest.
 - `GetDetachments(faction)` returns the roster's own detachments **plus the detachments of every roster named in
-  `FactionInfo.AdditionalFactionKeywords`**. A chapter can reuse the Space Marine detachments through that mechanism; the
-  chapter-only detachments need per-chapter visibility, which the model has no field for. Open: emit chapter-specific
-  detachments only in that chapter's own roster (and the shared ones in Space Marines).
+  `FactionInfo.AdditionalFactionKeywords`**. A sub-faction can reuse the parent-faction detachments through that mechanism; the
+  sub-faction-only detachments need per-chapter visibility, which the model has no field for. Open: emit sub-faction-specific
+  detachments only in that sub-faction's own roster (and the shared ones in the parent faction).
 
 ## 2. Force dispositions, detachment categories and tags (corrects an earlier note)
 
@@ -62,14 +61,14 @@ list plus Knights and Agents allies.
 - Detachment categories: each ordinary detachment carries exactly **one** disposition (Take and Hold 41, Disruption 37,
   Priority Assets 36, Reconnaissance 34, Purge the Foe 32 as sole category); the 34 `3DP Detachment` entries carry the
   `3DP Detachment` marker plus two or three dispositions; 13 carry none; a handful carry detachment-specific categories
-  (`Terminator Detachment`, `Ironstorm Detachment`, `Nightmare`, `Mutant` ...).
+  (`Detachment 13`, `Detachment 12`, `Nightmare`, `Mutant` ...).
 - **Mapping:** `Detachment.ForceDispositions` = the five disposition categories (display-only in the app).
   **`Detachment.Tags` must not be filled from these**: in the app, tags are *mutual exclusion* categories (two detachments
   sharing a tag cannot both be selected), and BSData has no such rule. Leave `Tags` empty. The user confirmed (D11) that
   the 11e rules do not forbid two detachments with the same disposition; BSData itself contains no rule text about
   dispositions, so this could not be checked in the data.
 - Detachment selection constraints in BSData: each detachment `max 1`; the group's cap is 1 when Incursion + a 3DP
-  detachment; otherwise none. Visibility depends only on mode (Boarding Actions) and, for chapters/Drukhari, the primary
+  detachment; otherwise none. Visibility depends only on mode (Boarding Actions) and, for sub-factions/Faction T, the primary
   catalogue.
 - Detachment points: 1 DP (103), 2 DP (113), 3 DP (34), none (13).
 
@@ -77,14 +76,14 @@ list plus Knights and Agents allies.
 
 - **Warlord** is an optional `Warlord` entry offered only when the unit has the `Character` category (hidden when
   `Character` is not an instance of the root entry), plus Boarding-Actions logic that we drop. Exceptions are in ability text:
-  "**must be your Warlord**" (9 abilities, e.g. `Supreme Commander` on Orks, Grey Knights, Emperor's Children, ...),
-  "**cannot be (selected as) your Warlord**" (about 11, e.g. `Wolfkin`, `Sydonian Sentinel`, `Loyal Protector`,
-  `Shadow Assignment`, `Manifestation of Destruction`), and the Titans' `Towering Example` (a Titan may be Warlord although not
-  a Character, and Titans skip the detachment step). Mapping: `UnitFlags.MustBeWarlord`, `NotWarlord`, `MayBeWarlord`,
-  derived from those ability texts; Titans get `MayBeWarlord`.
-- **Enhancement eligibility** is expressed by *linking* an enhancement group into the unit. 77 of 83 Space Marine entries link
-  `Enhancements`; Orks link either `Enhancements` (16 units) or `Enhancements - Upgrades` (37); Epic Heroes and most
-  vehicles link none (90 units across Orks, Necrons, Space Marines, T'au have no link). The app itself requires
+  "**must be your Warlord**" (9 abilities, e.g. `Rule 9` on Faction AE, Faction AB, Faction G, ...),
+  "**cannot be (selected as) your Warlord**" (about 11, e.g. `Rule 10`, `Rule 11`, `Rule 12`,
+  `Rule 13`, `Rule 14`), and those `Rule 15` (a Titan may be Warlord although not
+  a Character, and Faction AI skip the detachment step). Mapping: `UnitFlags.MustBeWarlord`, `NotWarlord`, `MayBeWarlord`,
+  derived from those ability texts; Faction AI get `MayBeWarlord`.
+- **Enhancement eligibility** is expressed by *linking* an enhancement group into the unit. 77 of 83 parent-faction entries link
+  `Enhancements`; Faction AE link either `Enhancements` (16 units) or `Enhancements - Upgrades` (37); Epic Heroes and most
+  vehicles link none (90 units across Faction AE, Faction AF, the parent faction, another faction have no link). The app itself requires
   `Character` or `Epic Hero` for ordinary enhancements (`ModelUtils`), so `UnitFlags.NoEnhancements` is needed only for
   Characters that have no link; units linked to `Enhancements - Upgrades` are the eligible bodies for **Upgrade**-flag
   enhancements (the max-3 pattern). The app offers Upgrade enhancements to any unit except Epic Heroes, so each one needs
@@ -93,16 +92,15 @@ list plus Knights and Agents allies.
 ## 4. Army rules
 
 Army rules are **not** a distinct object in BSData; they are named rules attached by `infoLink` to (nearly) every unit.
-Link counts (these include Legends entries, which are dropped later): Orks `Waaagh!` 73 (every Orks unit/model entry),
-Necrons `Reanimation Protocols` 67 (every entry), Leagues `Prioritised Efficiency` 25 (every entry), T'au `For The Greater
-Good` 44 (about two thirds of the 66 T'au entries; the rest to be investigated), Space Marines `Combat Doctrines` on 81 of
-the 83 in-scope entries and `Templar Vows` on 58 (the Black Templars). Detachment rules are rules linked from entries *inside* the `Detachment` group, and unit-specific rules (`Da Boss`,
-`Unstable Energies`) are linked from a handful of units. The catalogue root `rules` list also holds some (Orks: `Waaagh!`,
+Link counts (these include Legends entries, which are dropped later): Faction AE `Rule 1` 73 (every Faction AE unit/model entry),
+Faction AF `Rule 2` 67 (every entry), Leagues `Rule 3` 25 (every entry), another faction `Rule 4` 44 (about two thirds of the 66 another faction entries; the rest to be investigated), the parent faction `Rule 5` on 81 of
+the 83 in-scope entries and `Rule 6` on 58 (the Sub-faction d). Detachment rules are rules linked from entries *inside* the `Detachment` group, and unit-specific rules (`Rule 7`,
+`Rule 8`) are linked from a handful of units. The catalogue root `rules` list also holds some (Faction AE: `Rule 1`,
 `War Cry`).
 
 **Conversion heuristic:** `FactionRoster.ArmyRules` = rules linked from at least about half of the faction's root units, plus
 rules in the catalogue root `rules` list; everything linked only from detachment entries is a detachment rule; the rest are
-unit abilities. Space Marines have no catalogue-level rule, the rules sit elsewhere and are found by link target.
+unit abilities. the parent faction have no catalogue-level rule, the rules sit elsewhere and are found by link target.
 
 ## 5. Weapon keywords and core abilities (regex lists)
 
@@ -113,7 +111,7 @@ unit abilities. Space Marines have no catalogue-level rule, the rules sit elsewh
   Cleave N 50, One Shot 30.
 - **Qualified keywords** exist: `Lethal Hits: non-MONSTER/VEHICLE` (40), `Sustained Hits 1: non-MONSTER/VEHICLE`,
   `Devastating Wounds: Infantry|Monster/Vehicle|PSYKER`. `Anti-X N+` covers about 15 targets (Infantry, Vehicle, Fly, Monster,
-  Psyker, Monster/Vehicle, Character, Tyranids, Daemon, Walker, Titanic, Epic Hero, Chaos, non-Monster/Vehicle).
+  Psyker, Monster/Vehicle, Character, Faction AG, summoned-unit, Walker, Titanic, Epic Hero, Chaos, non-Monster/Vehicle).
   Dice values appear (`Sustained Hits D3`, `Rapid Fire D3`, `Rapid Fire D6+3`).
 - **Dirty data to normalise before matching**: spelling variants (`Twin Linked` vs `Twin-linked`, `Anti Vehicle 3+`,
   `ANTI-FLY 2` without plus), a non-breaking hyphen U+2011 in at least one keyword, a dangling `LETHAL HITS: non-`, two
@@ -141,8 +139,8 @@ depend on Crusade):
 | --- | --- | --- |
 | 403 | `increment` conditioned on earlier copies of the same unit/model (`before`) | `PointsDefinition.UnitCount` tiers |
 | ~257 | `set` / `increment` on model count (`atLeast`, `greaterThan`, `equalTo`, ranges, one `multiply`) | `PointsDefinition.ModelCount` tiers |
-| 14 | depend on the primary catalogue (Agents of the Imperium entries) | gap G1 |
-| ~20 | `set` on the count of a named model *category*/option (Eradicators, Hellblasters, Inceptors, Crusader Squad, Sanguinary Guard, Wolf Guard Headtakers with Hunting Wolves, Aquila / Decimus Kill Team "10 models") | usually equal to a total model count; the Headtakers are a genuine model-mix cost, to review per unit |
+| 14 | depend on the primary catalogue (Faction N entries) | gap G1 |
+| ~20 | `set` on the count of a named model *category*/option (Unit 13, Unit 14, Unit 15, Unit 16, Unit 17, Unit 1 with Unit 2, Aquila / Decimus Kill Team "10 models") | usually equal to a total model count; the Headtakers are a genuine model-mix cost, to review per unit |
 | 1 | depends on a detachment and Crusade | dropped |
 
 So **cost depending on the mix of model types is rare** (about 15 units); most "category" conditions count the unit's base
@@ -174,7 +172,7 @@ Protecting` and `Retainers` are non-standard attachments to review individually.
 - Normalise Unicode (U+2011 non-breaking hyphen, U+00A0 non-breaking space in join strings, typographic apostrophes); the
   Python scripts crash on a Windows console unless `PYTHONIOENCODING=utf-8`.
 - Strip `[Legends]`/`[Crucible]` units and every reference to them (leader lists, option lists, ally lists).
-- Placeholder entries exist (`PLACEHOLDER_NAME` was seen in the Daemons Library).
+- Placeholder entries exist (`PLACEHOLDER_NAME` was seen in the summoned units Library).
 - Stale `childName` labels in conditions (`Deepening Madness` etc.): resolve by `childId`, never by name.
 
 ## 9. Updates this implies elsewhere
@@ -197,31 +195,31 @@ Applied in the same commit: [03-mapping](03-mapping.md) (dispositions/tags, army
      `IgnoreStandardEnhancementRules`. The app does **not** use BSData's "group linked into the unit" eligibility.
 
    Conversion rules that follow: (a) a Character that has no `Enhancements` group link gets `NoEnhancements`; (b) for each
-   enhancement, derive `RequiredUnitNames` (small sets, e.g. `Wimp-kickaz` -> Nobz) or `RequiredKeywords` /
+   enhancement, derive `RequiredUnitNames` (small sets, e.g. `Rule 21` -> Unit 11) or `RequiredKeywords` /
    `ExcludedKeywords` from the units that link its group and from its own hide-conditions, so the filter reproduces
    BSData's eligibility; (c) every `Upgrade` enhancement **must** carry such a requirement, otherwise it would be offered to
    every non-Epic-Hero unit including vehicles when the filter is off.
 3. **The ~20 category-count point conditions.** Not decided by the user ("I don't know"). Plan: the converter reviews each
    during unit extraction (a category count normally equals the number of base models) and reports only those that do not
-   reduce to a model-count tier. Known real mix: Wolf Guard Headtakers with Hunting Wolves.
-4. **Non-standard attachments are not a problem.** Only 7 associations (plus 42 unlabeled plain leaders, Chaos Daemons "Leading"):
-   - `Support Weapon` (3: Aeldari D-Cannon, Shadow Weaver, Vibro Cannon Platforms, 0-1, attach to Guardian Defenders) ->
+   reduce to a model-count tier. Known real mix: Unit 1 with Unit 2.
+4. **Non-standard attachments are not a problem.** Only 7 associations (plus 42 unlabeled plain leaders, Faction C "Leading"):
+   - `Support Weapon` (3: Faction S Unit 22, Unit 23, Unit 24, 0-1, attach to Unit 25) ->
      `LeaderInfo` with `LeaderType = "Support Weapon"` (the model allows one attached unit per `LeaderType`).
    - `Loyally Protecting` (2: Nork Deddog, Ogryn Bodyguard, exactly 1, attach to Command Squad) -> `LeaderInfo` with a
      distinct `LeaderType`, and a required attachment if the app supports it (check `RequiredLeaderRule`).
-   - `Retainers` (2: Necrons Cryptothralls and Canoptek Tomb Crawlers, 0-1, attach to a Cryptek) -> `LeaderInfo` with
-     `RequiredLeaderKeywords = [Cryptek]` (the exact case the model comment describes).
+   - `Retainers` (2: Faction AF Unit 5 and Unit 4, 0-1, attach to a Unit 27) -> `LeaderInfo` with
+     `RequiredLeaderKeywords = [Unit 27]` (the exact case the model comment describes).
    All are expressible; they only need a small per-case mapping table.
 
 ## 11. Open after phase 1
 
-- The chapter-only detachment layout (gap G9) needs a check that `AdditionalFactionKeywords` can name a non-ally roster.
+- The sub-faction-only detachment layout (gap G9) needs a check that `AdditionalFactionKeywords` can name a non-ally roster.
 - Whether the app can require an attachment (`Loyally Protecting`): read `RequiredLeaderRule`.
-- Whether single-faction-keyword emission works for Deathwatch units that also carry `Faction: Adeptus Astartes`.
+- Whether single-faction-keyword emission works for Sub-faction f units that also carry `Faction: Faction AA`.
 
 ## 12. Scope rule discovered while checking stratagems: Boarding Actions-only detachments
 
 13 detachments are hidden in the plain game: their `hidden` modifier is `notInstanceOf Boarding Actions` (visible only in
-Boarding Actions). Example: Orks `Ramship Raiders` and `Kaptin Killers`. Wahapedia's Orks list (15 detachments) matches
-BSData's plain-game Orks detachments exactly. The converter must therefore **drop detachments that are only visible in
+Boarding Actions). Example: Faction AE `Detachment 1` and `Detachment 2`. Wahapedia's Faction AE list (15 detachments) matches
+BSData's plain-game Faction AE detachments exactly. The converter must therefore **drop detachments that are only visible in
 Boarding Actions** (and Crusade-only ones), not just ignore the toggle: of 263 detachments, the 13 above are out.

@@ -1,5 +1,5 @@
 import json, collections, glob, os
-os.chdir(''+__import__('os').environ.get('WH40K_SRC','../wh40k-11e')+'')
+os.chdir(''+__import__('os').environ.get('BSDATA_SRC','../bsdata')+'')
 rules_n = collections.Counter(); cost_n = collections.Counter(); total = 0
 multi = []; with_profiles = 0; with_infolinks = 0
 for f in glob.glob('*.json'):

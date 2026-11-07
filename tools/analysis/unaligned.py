@@ -1,5 +1,5 @@
 import json, os, collections
-src = os.environ.get('WH40K_SRC', '../wh40k-11e')
+src = os.environ.get('BSDATA_SRC', '../bsdata')
 u = json.load(open(src + '/Unaligned Forces.json', encoding='utf-8'))['catalogue']
 print('sharedSelectionEntries:')
 for s in u['sharedSelectionEntries']:

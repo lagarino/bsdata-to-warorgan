@@ -6,7 +6,7 @@ using WarOrganConverter.Resolve;
 namespace Converter.Tests;
 
 /// <summary>
-/// Runs only when WH40K_SRC points at a local checkout of a BSData repository; otherwise the tests are skipped.
+/// Runs only when BSDATA_SRC points at a local checkout of a BSData repository; otherwise the tests are skipped.
 /// They hold the checks that were first done by hand on the real data: structural invariants that should keep
 /// holding when the BSData repository is updated. They do not pin exact counts, which drift with the data.
 /// </summary>
@@ -15,18 +15,28 @@ public class IntegrationFactAttribute : FactAttribute
     public IntegrationFactAttribute()
     {
         if (string.IsNullOrEmpty(IntegrationTests.Source))
-            Skip = "Set WH40K_SRC to a BSData checkout to run the integration tests.";
+            Skip = "Set BSDATA_SRC to a BSData checkout to run the integration tests.";
     }
 }
 
 public class IntegrationTests
 {
-    public static string? Source => Environment.GetEnvironmentVariable("WH40K_SRC");
+    public static string? Source => Environment.GetEnvironmentVariable("BSDATA_SRC");
 
     private static readonly Lazy<BsdDatabase> Database = new(() => BsdDatabase.Load(Source!));
 
+    /// <summary>Catalogues checked by hand in the app: every invariant below must hold for them.</summary>
     public static IEnumerable<object[]> Factions =>
         [["Orks.json"], ["Necrons.json"]];
+
+    /// <summary>
+    /// Every catalogue that converts and passes the builder's validation. Only the structural invariants run on these; they still
+    /// have known fidelity gaps (see docs/04-gaps.md, "Wider catalogues").
+    /// </summary>
+    public static IEnumerable<object[]> AllFactions =>
+        Factions.Concat([["T'au Empire.json"], ["Leagues of Votann.json"], ["Imperium - Grey Knights.json"],
+         ["Imperium - Adepta Sororitas.json"], ["Aeldari - Craftworlds.json"], ["Aeldari - Drukhari.json"], ["Tyranids.json"],
+         ["Imperium - Adeptus Custodes.json"], ["Imperium - Adeptus Mechanicus.json"]]);
 
     private static (List<Unit> Units, List<string> Warnings) ExtractAll(string file)
     {
@@ -44,7 +54,7 @@ public class IntegrationTests
     }
 
     [IntegrationTheory]
-    [MemberData(nameof(Factions))]
+    [MemberData(nameof(AllFactions))]
     public void Roster_has_a_plausible_size_and_no_out_of_scope_entries(string file)
     {
         var db = Database.Value;
@@ -54,7 +64,7 @@ public class IntegrationTests
     }
 
     [IntegrationTheory]
-    [MemberData(nameof(Factions))]
+    [MemberData(nameof(AllFactions))]
     public void Every_unit_has_statlines_models_and_points(string file)
     {
         var (units, _) = ExtractAll(file);
@@ -69,7 +79,7 @@ public class IntegrationTests
     }
 
     [IntegrationTheory]
-    [MemberData(nameof(Factions))]
+    [MemberData(nameof(AllFactions))]
     public void Every_model_refers_to_an_existing_statline_and_unique_name(string file)
     {
         var (units, _) = ExtractAll(file);
@@ -98,7 +108,7 @@ public class IntegrationTests
     }
 
     [IntegrationTheory]
-    [MemberData(nameof(Factions))]
+    [MemberData(nameof(AllFactions))]
     public void Leader_attachments_name_real_units_and_every_character_leads_something(string file)
     {
         var (units, _) = ExtractAll(file);
@@ -166,7 +176,7 @@ public class IntegrationTests
     }
 
     [IntegrationTheory]
-    [MemberData(nameof(Factions))]
+    [MemberData(nameof(AllFactions))]
     public void Wargear_ids_resolve_and_every_weapon_is_selectable(string file)
     {
         var (units, warnings) = ExtractAll(file);
@@ -209,7 +219,7 @@ public class IntegrationTests
     }
 
     [IntegrationTheory]
-    [MemberData(nameof(Factions))]
+    [MemberData(nameof(AllFactions))]
     public void Ids_and_names_are_trimmed_as_the_builder_requires(string file)
     {
         var (units, _) = ExtractAll(file);
@@ -227,6 +237,6 @@ public class IntegrationTheoryAttribute : TheoryAttribute
     public IntegrationTheoryAttribute()
     {
         if (string.IsNullOrEmpty(IntegrationTests.Source))
-            Skip = "Set WH40K_SRC to a BSData checkout to run the integration tests.";
+            Skip = "Set BSDATA_SRC to a BSData checkout to run the integration tests.";
     }
 }

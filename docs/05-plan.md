@@ -7,7 +7,7 @@ live in small curated files next to the converter and are merged in.
 ## Phase 0 - Repo and decisions  (now)
 
 - [x] Analyse source and target; write these docs.
-- [x] Create the GitHub remote (private, `lagarino/bsdata-to-warorgan`, renamed from `warorgan-wh40k-11e`).
+- [x] Create the GitHub remote (private).
 - [x] Decided: C# converter (D4), tool-only repo with local-only output (D5), no Crucible (D6).
 - [x] Install the .NET 10 SDK; read the installed app's behaviour ([07-app-behaviour](07-app-behaviour.md)).
 - [ ] Remaining open decisions: O4, O5, **O7 (dataset ID, see gap G7)** in [00-scope-and-decisions](00-scope-and-decisions.md).
@@ -24,10 +24,10 @@ Close the "open data questions" in [01-source-data](01-source-data.md):
 
 1. Extract the `Force Disposition` group and see how it affects detachments.
 2. Find how `Warlord` is encoded and which units are forced / forbidden.
-3. Find where army rules live (catalogue `rules`, root `infoLinks`, `sharedRules`) for Orks, Necrons, Space Marines.
-4. Map `catalogueLinks` between all 48 files (who imports which library / chapters / Unaligned Forces).
+3. Find where army rules live (catalogue `rules`, root `infoLinks`, `sharedRules`) for Faction AE, Faction AF, the parent faction.
+4. Map `catalogueLinks` between all 48 files (who imports which library / sub-factions / Unaligned Forces).
    Output: a table in `docs/` plus a machine-readable `catalogue-graph.json` in `tools/`.
-5. Chapter overrides: diff `Imperium - Ultramarines.json` against `Imperium - Space Marines.json`.
+5. Sub-faction overrides: diff `Category 1 - Sub-faction a.json` against `Category 1 - the parent faction.json`.
 6. Classify the **long tail** of point modifiers and hidden modifiers (only the top 25 classes were printed).
 7. Classify weapon-profile modifiers (stats changing by wargear or detachment) vs keyword `annotation` text.
 8. Check that no points depend on the *mix* of model types (G6 last bullet).
@@ -80,7 +80,7 @@ Anything the evaluator cannot interpret goes to the report as "unconverted modif
 3. **Effective roster per faction**: own root links + root entries of directly linked catalogues
    (`importRootEntries`, non-transitive); a unit is a root-linked `unit` or `model`.
 4. **Faction model**: derive `FactionInfo` entries, `AdditionalFactionKeywords` and `Allies` (primary-roster include for
-   chapters, plain allies for Knights / Agents / Titans) from the catalogue graph; chapter gating becomes an allowlist
+   sub-factions, plain allies for Knights / Agents / Faction AI) from the catalogue graph; sub-faction gating becomes an allowlist
    `UnitIncludeRule`.
 5. **Unit extraction** with the scenario evaluator: statlines, model compositions, weapons (a `WeaponSet` per linked weapon
    entry), wargear options, points tiers (ceilings, non-decreasing, see 07), flags (Warlord from ability text), leaders.
@@ -101,7 +101,7 @@ Every converter phase lands together with its tests, and a phase is not done unt
   stage: loader and scope, roster resolution, statlines/weapons/keywords/abilities, compositions and points, wargear. They
   encode each behaviour verified by hand on the real data (for example ceiling tiers, copy-index tiers, wrapper
   choices, unit-level fallbacks) so regressions are caught at build time. No real game text goes into fixtures (D5).
-- **Integration tests** (`IntegrationTests.cs`) run only when `WH40K_SRC` points at a BSData checkout. They assert
+- **Integration tests** (`IntegrationTests.cs`) run only when `BSDATA_SRC` points at a BSData checkout. They assert
   structural invariants on the real catalogues (every unit has statlines, models and points; every model refers to an
   existing statline; wargear ids resolve; every weapon is selectable; in-scope points conditions are understood;
   ids are trimmed). They found two real bugs on first run (missing statline reference for variant models, duplicate
@@ -131,9 +131,9 @@ Settings come from a JSON file and/or command-line options; none are hard-coded:
 
 | Setting | Notes |
 | --- | --- |
-| `bsDataPath` | checkout of BSData/wh40k-11e |
+| `bsDataPath` | checkout of the BSData repository |
 | `outputPath` | where the dataset folder and ZIP are written; must be outside any git repo or ignored |
-| `datasetId` | **required, no default.** Either an own ID or the app's hard-wired `Warhammer 40k 11th` (see G7) |
+| `datasetId` | **required, no default.** Either an own ID or the app's hard-wired dataset id (see G7) |
 | `datasetVersion` | `major.minor.build.rev`; the app uses minor and build; higher wins for the same ID (07 section 4) |
 | `wahapediaCacheDir` | persistent on-disk cache of Wahapedia pages (D13); default under the user's local app data, outside the repo |
 | `overridesPath` | optional curated overrides (own facts only: ally percentages, id remaps, manual fixes) |
@@ -151,23 +151,22 @@ squad needs matching model names and wargear IDs). Mismatches are warnings, not 
 
 ## Phase 4 - Proof of concept: one faction end to end
 
-Pick **Orks** (single catalogue, imports only `Unaligned Forces` (out of scope, so nothing to resolve), rich detachments, enhancements with the
-3-copy pattern, leaders, Support). Alternative low-risk first target: **Necrons** (no library). Goal:
+Pick a single self-contained catalogue (no library, imports only an out-of-scope catalogue, so nothing to resolve) with rich
+detachments, enhancements with the 3-copy pattern, leaders and Support units. Pick a second, simpler one as the low-risk
+alternative. Goal:
 
-1. `DataSetDefinition.json` with the 11e battle sizes, category keywords, weapon/core ability regexes.
-2. `Rosters/Orks.json` that passes `BuildDataset` validation with zero errors.
-3. Hand-check five units against BSData and the rules: Boyz (points tiers, special weapons),
-   Warboss (leader, enhancements), a vehicle (Battlewagon), an Epic Hero, a Support leader.
+1. `DataSetDefinition.json` with the current-edition battle sizes, category keywords, weapon/core ability regexes.
+2. A roster that passes `BuildDataset` validation with zero errors.
+3. Hand-check five units against BSData and the rules: a squad with points tiers and special weapons, a leader with
+   enhancements, a vehicle, an Epic Hero, a Support leader.
 4. Import the ZIP into WarOrgan and build a 1000-point list.
 
-Exit criterion: the generated Orks list builds in the app with correct points for the five spot-checks.
+Exit criterion: the generated list builds in the app with correct points for the five spot-checks.
 
 ## Phase 5 - Scale out
 
-Order: Necrons, T'au, Tyranids, Genestealer Cults, Leagues of Votann, Adeptus Custodes (single-catalogue
-factions) -> Aeldari / Drukhari (Library) -> Space Marines + chapters -> Astra Militarum, Imperial Knights,
-Chaos Knights, Chaos Space Marines & subfactions, Chaos Daemons, Grey Knights, Adepta Sororitas, Mechanicus,
-Deathwatch, Agents of the Imperium (G1), Titans.
+Order: the remaining single-catalogue factions -> factions that share a library catalogue -> the large parent faction and its
+sub-factions -> factions that include other factions' units or depend on the primary catalogue (G1) -> the rest.
 
 For each faction record a conversion report; track unconverted modifier counts per faction and drive them
 to zero or document them.
@@ -192,7 +191,7 @@ carry those numbers.
 
 ## Phase 8 - Maintenance
 
-Re-run the converter when BSData changes: `git -C ../wh40k-11e pull`, regenerate, diff the output, review the
+Re-run the converter when BSData changes: `git -C ../bsdata pull`, regenerate, diff the output, review the
 report. The diff is the changelog.
 
 ## Risks

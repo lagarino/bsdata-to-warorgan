@@ -1,7 +1,7 @@
 """Shared loader for the phase-1 analysis scripts.
 
 Usage:  from bsd import load
-        db = load()          # WH40K_SRC env var, default ../wh40k-11e
+        db = load()          # BSDATA_SRC env var, default ../bsdata
         db.roots[file]       # catalogue/gameSystem dict per file name
         db.byid[id]          # (node, file, path-of-(name,type)) for every node with an id (first definition wins)
 """
@@ -61,7 +61,7 @@ class DB:
 
 
 def load():
-    return DB(os.environ.get('WH40K_SRC', os.path.join('..', 'wh40k-11e')))
+    return DB(os.environ.get('BSDATA_SRC', os.path.join('..', 'bsdata')))
 
 
 def conditions(m, out=None):

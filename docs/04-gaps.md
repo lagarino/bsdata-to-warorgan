@@ -14,15 +14,15 @@ turned out to be solved by existing app features and are kept here as a record.
 | G6 | Validator and app constraints to design around | Design notes |
 | G7 | **App rules only run for two hard-wired dataset IDs** | **New, decision needed (O7)** |
 | G8 | Faction-specific rules live in app code | **New**, cannot be expressed in a dataset |
-| G9 | Chapter-only detachments in the shared Space Marines list | **New (phase 1)**, workaround exists |
+| G9 | Sub-faction-only detachments in the shared the parent faction list | **New (phase 1)**, workaround exists |
 
 ---
 
 ## G1 - Points that depend on the army context (ally / primary catalogue)  [Open, verified]
 
-**Data:** The Agents of the Imperium assassins (and 11 similar entries; 12 point-modifiers in total) are
-`increment pts +15` when the roster's primary catalogue is *not* Agents of the Imperium, i.e. when they are taken
-as allies in another army (e.g. Vindicare Assassin, condition `primary-catalogue ... notInstanceOf`).
+**Data:** The Faction N assassins (and 11 similar entries; 12 point-modifiers in total) are
+`increment pts +15` when the roster's primary catalogue is *not* Faction N, i.e. when they are taken
+as allies in another army (e.g. Unit 3, condition `primary-catalogue ... notInstanceOf`).
 
 **Model/app:** `UnitIncludeRule` can only change keywords (`AddedKeywords`, `RemovedKeywords`, `ReplaceFactionKeywords`);
 the app's `FilterAndCloneBySubFactionInfo` has no points hook. `PointsOverride` exists only on `DetachmentEffect`.
@@ -105,8 +105,7 @@ none in the dataset; mention in the dataset README or ask whether a `Unit` flag 
 
 ## G7 - App rules only run for two hard-wired dataset IDs  [New, decision needed]
 
-`ArmyValidationService` only builds its rule list when the dataset ID is exactly `Warhammer 40k 10th` or
-`Warhammer 40k 11th`. For any other ID the app validates **only the points cap**: no duplicate-datasheet limit, no Epic
+`ArmyValidationService` only builds its rule list when the dataset ID is exactly one of the app's two built-in dataset ids. For any other ID the app validates **only the points cap**: no duplicate-datasheet limit, no Epic
 Hero limit, no unique-enhancement rule, no warlord / leader / support rules, no allies points cap. The TTS, YellowScribe
 and GW / WTC text exports and "import from text" are also limited to those two IDs.
 
@@ -114,8 +113,8 @@ Options for the dataset ID (open decision O7):
 
 | Option | Gain | Cost |
 | --- | --- | --- |
-| A. Own ID (e.g. `WH40K-11E`) | No clash with the maintainer's datasets or old lists | No validation beyond points, fewer exports |
-| B. Reuse `Warhammer 40k 11th` | Validation and all exports work | The ~60 faction-specific rules fire against our data (keyed on unit and detachment *names*); lists saved under that ID from the old dataset would point at our unit IDs and break; may collide with any official dataset the app downloads |
+| A. Own ID (e.g. `MY-DATASET`) | No clash with the maintainer's datasets or old lists | No validation beyond points, fewer exports |
+| B. Reuse a built-in id | Validation and all exports work | The ~60 faction-specific rules fire against our data (keyed on unit and detachment *names*); lists saved under that ID from the old dataset would point at our unit IDs and break; may collide with any official dataset the app downloads |
 
 **Decision (D7):** the choice is left to whoever runs the converter (`datasetId` setting, required, no silent default).
 The project's preferred target is B. To make that safe the converter must produce a **rule-compatibility report** (plan
@@ -141,10 +140,31 @@ Nothing has been sent to the maintainer.
 
 ---
 
-## G9 - Chapter-only detachments in the shared Space Marines list  [New, phase 1]
+## G9 - Sub-faction-only detachments in the shared the parent faction list  [New, phase 1]
 
-**Data:** all 35 Space Marine detachments are defined in the Space Marines catalogue, including chapter-specific ones (Champions of Fenris, Angelic Inheritors, Blade of Ultramar, ...), each hidden unless the roster's primary catalogue is that chapter. Chapter catalogues add none.
+**Data:** all 35 parent-faction detachments are defined in the parent faction catalogue, including sub-faction-specific ones (Detachment 7, Detachment 8, Detachment 9, ...), each hidden unless the roster's primary catalogue is that sub-faction. Sub-faction catalogues add none.
 
 **App:** `GetDetachments(faction)` = the faction roster's own detachments plus those of the rosters named in `AdditionalFactionKeywords`; there is no per-detachment visibility by faction.
 
-**Workaround:** put generic detachments in the Space Marines roster, and each chapter-specific detachment only in that chapter's own roster; chapters list the Space Marines roster in `AdditionalFactionKeywords`. Needs a check that `AdditionalFactionKeywords` can name a roster that is not an ally.
+**Workaround:** put generic detachments in the parent faction roster, and each sub-faction-specific detachment only in that sub-faction's own roster; sub-factions list the parent faction roster in `AdditionalFactionKeywords`. Needs a check that `AdditionalFactionKeywords` can name a roster that is not an ally.
+
+## Wider catalogues  [Status: open]
+
+Eleven catalogues of the first target convert and pass the builder's validation; two were checked by hand in the app. The other nine
+are produced by the same rules, but the stricter integration checks (which hold for the two checked ones) still fail for some:
+
+- **Points conditions not understood.** Some catalogues use point modifiers whose conditions the evaluator does not read (for
+  example conditions on another option or on a shared category). The affected units keep their base cost, and `convert` reports them.
+- **Model limits above the priced size.** For two units of two catalogues the merged loadout variants allow more models in total
+  (10) than the points table prices (4): the group cap in the data is not on the group that was merged. Needs a look at those two
+  units.
+- **Detachments and enhancements.** Some catalogues have detachment or enhancement entries the extractor still skips or reads
+  incompletely (a missing description, an enhancement limited to a unit name that is not a roster unit). One catalogue has no
+  detachment effects at all, which may be correct.
+- **Allies and shared rosters.** Units that a catalogue imports from another catalogue are left out of its roster, and no ally
+  relationship is written. Catalogues that list another army's units as their own are not converted yet.
+- **Other families.** The large parent faction with its sub-factions, the faction families that include other factions, and the
+  library-only catalogues are not converted.
+
+The integration tests keep the strict checks on the two verified catalogues and run only the structural checks on the rest; as each
+gap above is closed, the strict list grows.

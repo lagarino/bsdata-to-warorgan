@@ -15,7 +15,7 @@ three flag enums by hand). The app accepts only `DataSetFormatVersion == 1`; any
 
 ## 1. The dataset ID is hard-wired (important for decision O7)
 
-The app has built-in behaviour for two dataset IDs: **`Warhammer 40k 10th`** and **`Warhammer 40k 11th`**.
+The app has built-in behaviour for two dataset IDs: two ids (one per supported edition), called the built-in ids below.
 
 | Behaviour | Where | Any other dataset ID |
 | --- | --- | --- |
@@ -29,7 +29,7 @@ Rules switched off for other IDs include: max duplicate datasheets, max one Epic
 warlord rule, required leader, solo leader, allies points limit, Damned units, and **~60 faction-specific rules**
 (`WarOrgan.ArmyValidation.<Faction>` namespaces: Tactical Marines, Calgar, Kasrkin, Broadside Battlesuits,
 `BloodLegions` ... ). Those faction rules are keyed on **unit IDs/names and detachment names** (for example
-`REAPER’S WAGER`), so they would apply to any dataset that reuses the ID `Warhammer 40k 11th`, correctly or
+`Detachment 14`), so they would apply to any dataset that reuses a built-in ID, correctly or
 spuriously depending on how closely our names match.
 
 Everything else (list building, points, leaders, wargear, detachments, PDF/text/share-code export) works for any ID.
@@ -51,7 +51,7 @@ Everything else (list building, points, leaders, wargear, detachments, PDF/text/
 ### Points (`PointsCalculationExtensions.WithCalculatedPoints`)
 
 - `ModelCount` is a **ceiling**: the app orders the unit's `Points` by `Cost` ascending and takes the **first entry whose
-  `ModelCount >= models in unit`**; if none, the last. So a tier "9-10 Boyz = 85, 11-18 = 170" is written as
+  `ModelCount >= models in unit`**; if none, the last. So a tier "9-10 Unit 10 = 85, 11-18 = 170" is written as
   `{ModelCount 10, Cost 85}, {ModelCount 18, Cost 170}`. Costs must be non-decreasing with model count.
 - `UnitCount` is also a **ceiling per copy index**: with `n = min(copies already in the list + 1, max UnitCount)` it keeps
   entries with `UnitCount >= n`, then applies the model-count rule. "First two copies 100, later copies 110" is
@@ -74,7 +74,7 @@ Everything else (list building, points, leaders, wargear, detachments, PDF/text/
 ### Keywords the app compares literally
 
 `"Epic Hero"`, `"Battleline"`, `"Dedicated Transport"`, and a substring match on `"Character"`. They must be present
-in `Unit.Keywords` with exactly this spelling and case, as must the god keywords used by the Daemonic allies rule
+in `Unit.Keywords` with exactly this spelling and case, as must the god keywords used by the summoned allies rule
 (`Khorne`, `Tzeentch`, `Nurgle`, `Slaanesh`).
 `LeaderInfo.LeaderType` default is `"Leader"`; `"Support"` is recognised by `SupportCharacterRule`.
 
@@ -98,7 +98,7 @@ in `Unit.Keywords` with exactly this spelling and case, as must the god keywords
 - The app can also pull datasets from URLs (`CheckDataSourceAsync`, stored in `DataSets\config.json` `Sources`).
 - A dataset can be deleted again from the Data Sets page (`DeleteDataSetAsync` by id, by version, or all versions).
 
-Consequences for the dataset-ID choice (decision D7): reusing `Warhammer 40k 11th` with a **higher version** than any other
+Consequences for the dataset-ID choice (decision D7): reusing a built-in id with a **higher version** than any other
 dataset of that ID makes ours the one selected for that ID, and it is undone by deleting it (or by importing something
 with a higher version). Lists created while using it keep the ID but reference our unit IDs, which is the only truly
 sticky part. Use a clearly high `datasetVersion` deliberately, and a different one when you do not want to override.

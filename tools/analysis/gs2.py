@@ -1,5 +1,5 @@
 import json, sys
-d = json.load(open(''+__import__('os').environ.get('WH40K_SRC','../wh40k-11e')+'/Warhammer 40,000.json', encoding='utf-8'))['gameSystem']
+d = json.load(open(''+__import__('os').environ.get('BSDATA_SRC','../bsdata')+'/Warhammer 40,000.json', encoding='utf-8'))['gameSystem']
 def trim(o):
     if isinstance(o, dict):
         return {k: trim(v) for k, v in o.items() if k not in ('id', 'typeId', 'shared', 'import', 'includeChildSelections', 'includeChildForces', 'publicationId', 'page', 'costs', 'hidden')}

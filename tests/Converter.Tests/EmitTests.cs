@@ -52,6 +52,18 @@ public class EmitTests
     }
 
     [Fact]
+    public void A_spelling_variant_with_a_space_instead_of_a_hyphen_matches_the_same_rule()
+    {
+        var unmatched = new List<string>();
+        var list = AbilityDefinitions.Build(["Twin Linked", "TWIN-LINKED"], Rules, unmatched);
+        var one = Assert.Single(list);
+        Assert.Empty(unmatched);
+        var regex = new System.Text.RegularExpressions.Regex(one.Regex, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        Assert.Matches(regex, "Twin Linked");
+        Assert.Matches(regex, "Twin-linked");
+    }
+
+    [Fact]
     public void Tokens_without_a_source_rule_get_an_exact_regex_and_are_reported()
     {
         var unmatched = new List<string>();

@@ -31,7 +31,7 @@ if (command is not ("survey" or "extract" or "convert"))
     return command == "help" ? 0 : 2;
 }
 
-var bsdata = Opt("--bsdata") ?? Environment.GetEnvironmentVariable("WH40K_SRC");
+var bsdata = Opt("--bsdata") ?? Environment.GetEnvironmentVariable("BSDATA_SRC");
 if (bsdata is null)
 {
     Console.Error.WriteLine("--bsdata <folder> is required");

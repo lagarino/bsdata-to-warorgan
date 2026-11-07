@@ -7,10 +7,10 @@ Status column: **OK** = representable as is, **WORK** = representable but needs 
 
 | BSData | WarOrgan | Status | Notes |
 | --- | --- | --- | --- |
-| One catalogue per faction (`Orks.json`, ...) | `FactionInfo` + `Rosters/<Name>.json` | OK | `Category` groups the faction picker (Imperium / Chaos / Xenos ...) - catalogue file prefixes hint at it |
+| One catalogue per faction (`Faction AE.json`, ...) | `FactionInfo` + `Rosters/<Name>.json` | OK | `Category` groups the faction picker (Category 1 / Chaos / Category 2 ...) - catalogue file prefixes hint at it |
 | `Faction: <X>` category | `FactionInfo.FactionKeyword` and `Unit.FactionKeywords` | OK | |
-| Library catalogues (`Aeldari - Aeldari Library`, ...) | Units copied into each consuming faction's roster, or modelled as `Allies` with `UnitIncludeRule` | WORK | Prefer copying shared units into each roster that links the library. Which catalogues import which library is not yet mapped (`catalogueLinks` must be read) |
-| Space Marine chapters (catalogue imports Space Marines) | Ally with `IsIncludedInPrimaryRoster: true`, chapter keyword via `AdditionalFactionKeywords` / `ReplaceFactionKeywords` | WORK | Only one primary-included ally per faction |
+| Library catalogues (`Faction S - Faction R`, ...) | Units copied into each consuming faction's roster, or modelled as `Allies` with `UnitIncludeRule` | WORK | Prefer copying shared units into each roster that links the library. Which catalogues import which library is not yet mapped (`catalogueLinks` must be read) |
+| sub-faction catalogues (catalogue imports the parent faction) | Ally with `IsIncludedInPrimaryRoster: true`, sub-faction keyword via `AdditionalFactionKeywords` / `ReplaceFactionKeywords` | WORK | Only one primary-included ally per faction |
 | `Allies: <X>` categories on the Army Roster force | `FactionInfo.Allies[]` | WORK | `ArmyPercentageRestriction`, `AllowedDetachments` need the actual ally rules (not in BSData as numbers - to source) |
 | Battle Size entries | `BattleSizeDefinitions` | OK | See table in [01-source-data](01-source-data.md); `PointsTotal` must be unique; DP 2/3/4, enhancements 2/4/4, **`UnitLimit` = 3** (G3 solved, see [04-gaps](04-gaps.md)) |
 | `Override points limit?` (>=500, step 250) | none needed | OK | The app maps any points limit to the first battle size with `PointsTotal` >= limit |
@@ -33,14 +33,14 @@ Status column: **OK** = representable as is, **WORK** = representable but needs 
 | Weapon `Range` `A BS/WS S AP D` | `Weapon.Stats` with ids `Range, A, BS or WS, S, AP, D` | OK | |
 | Profile type `Abilities` | `Unit.UnitAbilities` (`UnitInfoSection`) | OK | Keep Markdown; the validator warns above 4 lines of `\r\n` text |
 | `Transport`, `Psychic Abilities`, ad-hoc profile types | `Unit.Infos` text sections | WORK | Flatten random tables (D6 tables) into text |
-| `rules` / `infoLinks` rule on a unit (e.g. Waaagh!, Leader) | `UnitAbilities` or `CoreAbilities` | WORK | Core ability (Deep Strike, Scouts 6", Feel No Pain 5+) -> `CoreAbilities` string matched by regex |
+| `rules` / `infoLinks` rule on a unit (e.g. Rule 1, Leader) | `UnitAbilities` or `CoreAbilities` | WORK | Core ability (Deep Strike, Scouts 6", Feel No Pain 5+) -> `CoreAbilities` string matched by regex |
 | Category links (non-faction, non-role) | `Unit.Keywords` | OK | Strip `Faction: ` prefix for faction keywords |
 | Unit cost `pts` base + modifiers | `Points[]` | WORK | Evaluate modifiers over model counts (model-count tiers) and prior copies (`UnitCount`) |
 | Per-model extra cost (model-level `pts`) | `ModelComposition.UpgradeCost` | WORK | Used for add-on models that are not part of base unit size |
 | Wargear/upgrade cost | `WargearDefinition.Cost` or `UnitUpgrade` | WORK | |
 | Wargear that changes stats or grants abilities | `WargearDefinition{StatAdjustments, WeaponAdjustments, GrantsWeapons, GrantsAbilities, DatasheetAdjustments}` | WORK | Most BSData uses `annotation` text modifiers rather than structured ones - must be parsed or left as ability text |
 | Unit copy limit `selections max 3/6/1` | `BattleSizeDefinition.UnitLimit` + keywords `Battleline` / `Epic Hero` | OK, 9 exceptions | App derives 3 / 2x / 1 from keywords (G4) |
-| `Warlord` entry (offered on `Character`) plus ability text "must be your Warlord" (9) / "cannot be (selected as) your Warlord" (~11), and Titans' `Towering Example` | `Unit.Flags` (`MustBeWarlord`, `NotWarlord`, `MayBeWarlord` for Titans) | WORK | Derived from ability-text patterns; see [08-phase1-findings](08-phase1-findings.md) section 3 |
+| `Warlord` entry (offered on `Character`) plus ability text "must be your Warlord" (9) / "cannot be (selected as) your Warlord" (~11), and Faction AI' `Rule 15` | `Unit.Flags` (`MustBeWarlord`, `NotWarlord`, `MayBeWarlord` for Faction AI) | WORK | Derived from ability-text patterns; see [08-phase1-findings](08-phase1-findings.md) section 3 |
 | `associations` Leader/Support | `LeaderInfo{UnitNames, AttachableByKeyword, LeaderType}` | WORK | Resolve unit ids in conditions to unit ids. `LeaderType = null` (default Leader), `"Support"`; keyword-based leading from `instanceOf` category conditions |
 | Bodyguard association constraints / overrides | `AttachedUnitInfo.MaxLeaders[]` | WORK | |
 
@@ -48,9 +48,9 @@ Status column: **OK** = representable as is, **WORK** = representable but needs 
 
 | BSData | WarOrgan | Status | Notes |
 | --- | --- | --- | --- |
-| `Detachment` group children | `FactionRoster.Detachments[]` | WORK | Detachments may exist in several catalogues (generic vs chapter) |
+| `Detachment` group children | `FactionRoster.Detachments[]` | WORK | Detachments may exist in several catalogues (generic vs sub-faction) |
 | Detachment `Detachment Points` cost (1-3) | `Detachment.Cost` | OK | |
-| Detachment `categoryLinks`: the five dispositions | `Detachment.ForceDispositions` | OK | **Not** `Tags`: in the app, tags are mutual-exclusion categories and BSData has no such rule. Leave `Tags` empty. `3DP Detachment` is only a marker (drives `Cost` 3) and the few detachment-specific categories (Terminator Detachment, ...) are dropped |
+| Detachment `categoryLinks`: the five dispositions | `Detachment.ForceDispositions` | OK | **Not** `Tags`: in the app, tags are mutual-exclusion categories and BSData has no such rule. Leave `Tags` empty. `3DP Detachment` is only a marker (drives `Cost` 3) and the few detachment-specific categories (Detachment 13, ...) are dropped |
 | Detachment `rules` | `Detachment.Rule` (single) | GAP G5 | Merge multiple rules into one text |
 | Detachment effect expressed as modifier groups on units | `Detachment.Effects[DetachmentEffect]` | WORK | **Inverse of how BSData stores it.** For each detachment, scan every unit's modifier groups conditioned on that detachment; collapse units sharing the same effect into one `DetachmentEffect.AffectedUnits` list; or use `AffectedUnitsByKeyword` when it matches a keyword (BOYZ, ORKS INFANTRY) |
 | Detachment-conditioned points | `DetachmentEffect.PointsOverride` | WORK | |

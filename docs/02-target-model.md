@@ -35,7 +35,7 @@ A roster file named `"{Name} Legends".json` marks its units `IsLegend` *(from th
 `FactionAlly`: `FactionKeyword, AdditionalFactionKeywords, IsIncludedInPrimaryRoster,
 ArmyPercentageRestriction, AllowedDetachments, UnitIncludeRules[]`. A faction may have **at most one**
 `IsIncludedInPrimaryRoster` ally (`CoreFactionKeyword` uses `SingleOrDefault`). This is the mechanism for
-"Ultramarines = Space Marines + chapter-specific units".
+"Sub-faction a = the parent faction + sub-faction-specific units".
 
 `UnitIncludeRule`: filters (`AffectedUnitsFilter, AllKeywordFilter, AnyKeywordFilter, ExcludeKeywordFilter`)
 and effects (`AddedKeywords, RemovedKeywords, ReplaceFactionKeywords`) applied when units are cloned into the
@@ -168,7 +168,7 @@ this project.
 
 ## What the model shows about its intended game
 
-The model was clearly shaped by 40k: `Support` leader type, Force Dispositions, enhancement points,
+The model was clearly shaped by this kind of tabletop wargame: `Support` leader type, Force Dispositions, enhancement points,
 Legends, `Warlord` flags, `ModelWhileLeading` scopes, weapon keyword conventions. The Fracture example is
 a tabletop game with a different stat vocabulary, so characteristic IDs (`Move`, `Defence`, `Range`,
-`Attacks`) are free-form strings; for 40k we will use `M, T, Sv, W, LD, OC, InSv` and `Range, A, BS/WS, S, AP, D`.
+`Attacks`) are free-form strings; for the first target we use `M, T, Sv, W, LD, OC, InSv` and `Range, A, BS/WS, S, AP, D`.
