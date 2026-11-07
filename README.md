@@ -50,6 +50,14 @@ community, in no way endorsed by any company/publisher"). This repo redistribute
 generated dataset (decision D5); it contains only analysis and tooling. Check upstream BSData terms and the
 Games Workshop IP position for your own use of the generated output.
 
+### WarOrgan.Data (model library) - MIT
+
+`WarOrgan.Data` (https://github.com/zenchovey/WarOrgan.Data, commit `45f934b8efcf4c988cd2cfd124458d78f09920c7`) is under the
+**MIT licence** (Copyright (c) 2026 zenchovey; its README says the model, build tools and documentation may be used, modified and
+shared under it). That permits redistributing a compiled build that includes the model library, provided the copyright and
+permission notice travel with it. Release packages of this tool must therefore include a third-party notice with the
+WarOrgan.Data MIT text. Decision for releases: see `docs/05-plan.md` (Phase 3 - releases).
+
 ## Resuming
 
 1. Read [docs/05-plan](docs/05-plan.md), phase 1 is the next piece of work.

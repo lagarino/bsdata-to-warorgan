@@ -93,6 +93,18 @@ Anything the evaluator cannot interpret goes to the report as "unconverted modif
 `annotation` modifiers (text appended to profiles) must be recognised and turned into keyword adjustments
 where they carry rules keywords (e.g. SUSTAINED HITS 1), otherwise surfaced as ability text.
 
+## Phase 3 - Releases (binary distribution)
+
+Publishing prebuilt executables as GitHub Releases (for example `v0.1.0`) is feasible:
+
+- The tool contains no BSData or Wahapedia content (both are read at run time from the user's machine).
+- `WarOrgan.Data` is MIT-licensed, so redistributing a build that embeds the model library is allowed; each release must ship a
+  `THIRD-PARTY-NOTICES` file with its MIT text and copyright line (zenchovey, 2026).
+- Plan: `dotnet publish` self-contained single-file for win-x64, linux-x64, osx-arm64, built by a GitHub Actions workflow on version tags.
+- Embedded data files must contain only our own mappings and names, never rules text from BSData or Wahapedia.
+- The repo is private, so releases are visible to collaborators only until the repo is made public (a separate decision).
+- Wahapedia has no licence: the stratagem step stays optional (`--no-stratagems`), with a first-download notice.
+
 ## Phase 3a - Converter settings (decision D7)
 
 Settings come from a JSON file and/or command-line options; none are hard-coded:
