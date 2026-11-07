@@ -42,7 +42,11 @@ foreach (var (file, root) in db.Roots.Where(kv => BsdDatabase.Str(kv.Value, "typ
     {
         var extractor = new UnitExtractor(db);
         var warnings = new List<string>();
-        var extracted = units.Select(u => extractor.Extract(u, warnings)).ToList();
+        var armyRules = UnitExtractor.FindArmyRules(units);
+        Console.WriteLine($"  army rules: {string.Join(", ", armyRules.Select(db.Name))}");
+        var extracted = units.Select(u => extractor.Extract(u, armyRules, warnings)).ToList();
+        Console.WriteLine($"  keywords {extracted.Sum(u => u.Keywords.Count)}, faction keywords {extracted.Sum(u => u.FactionKeywords.Count)}, core abilities {extracted.Sum(u => u.CoreAbilities.Count)}, unit abilities {extracted.Sum(u => u.UnitAbilities.Count)}");
+        Console.WriteLine($"  core abilities used: {string.Join("; ", extracted.SelectMany(u => u.CoreAbilities).Distinct().Order())}");
         Console.WriteLine($"{name}: {extracted.Count} units, {extracted.Sum(u => u.StatLines.Count)} statlines, {extracted.Sum(u => u.Weapons.Sum(w => w.Weapons.Count))} weapon profiles");
         foreach (var w in warnings) Console.WriteLine("  warning: " + w);
         var sample = Opt("--unit");
