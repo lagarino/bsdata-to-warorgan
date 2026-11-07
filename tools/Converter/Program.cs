@@ -88,6 +88,10 @@ foreach (var (file, root) in db.Roots.Where(kv => BsdDatabase.Str(kv.Value, "typ
         var extracted = roster.Units;
         Console.WriteLine($"  keywords {extracted.Sum(u => u.Keywords.Count)}, faction keywords {extracted.Sum(u => u.FactionKeywords.Count)}, core abilities {extracted.Sum(u => u.CoreAbilities.Count)}, unit abilities {extracted.Sum(u => u.UnitAbilities.Count)}");
         Console.WriteLine($"  core abilities used: {string.Join("; ", extracted.SelectMany(u => u.CoreAbilities).Distinct().Order())}");
+        Console.WriteLine($"  detachments {roster.Detachments.Count}, enhancements {roster.Detachments.Sum(d => d.Enhancements.Count)}");
+        if (argsList.Contains("--detachments"))
+            foreach (var d in roster.Detachments)
+                Console.WriteLine($"  {d.Name,-26} {d.Cost}DP [{string.Join(", ", d.ForceDispositions ?? [])}] rule '{d.Rule?.Title}' enh: {string.Join("; ", d.Enhancements.Select(x => $"{x.Name} {x.Cost}{(x.Features.HasFlag(WarOrgan.Model.Faction.EnhancementFeature.Upgrade) ? "U" : "")}"))}");
         Console.WriteLine($"{name}: {extracted.Count} units, {extracted.Sum(u => u.StatLines.Count)} statlines, {extracted.Sum(u => u.Weapons.Sum(w => w.Weapons.Count))} weapon profiles");
         foreach (var w in warnings) Console.WriteLine("  warning: " + w);
         if (argsList.Contains("--brief"))

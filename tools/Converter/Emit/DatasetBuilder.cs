@@ -73,6 +73,7 @@ public static class DatasetBuilder
                         w.Keywords = NullIfEmpty(AbilityDefinitions.NormaliseKeywords(w.Keywords));
                 roster.Units.Add(unit);
             }
+            roster.Detachments.AddRange(extracted.Detachments);
             foreach (var id in army.Order())
                 if (db.ById.TryGetValue(id, out var r) && BsdDatabase.Str(r.Node, "description") is { } text && !string.IsNullOrWhiteSpace(text))
                     roster.ArmyRules.Add(new UnitInfoSection { Title = BsdDatabase.Str(r.Node, "name")!.Trim(), Text = text.Trim() });
@@ -87,7 +88,9 @@ public static class DatasetBuilder
         var unmatched = new List<string>();
         var definition = new DataSetDefinition
         {
-            Features = DataSetFeatures.ArmyRules,
+            Features = DataSetFeatures.ArmyRules
+                       | (rosters.Any(r => r.Detachments.Count > 0) ? DataSetFeatures.Detachments | DataSetFeatures.Dispositions : 0)
+                       | (rosters.Any(r => r.Detachments.Any(d => d.Enhancements.Count > 0)) ? DataSetFeatures.Enhancements : 0),
             Factions = factions,
             BattleSizeDefinitions = BattleSizes(),
             CoreAbilities = AbilityDefinitions.Build(rosters.SelectMany(r => r.Units).SelectMany(u => u.CoreAbilities), rules, unmatched),

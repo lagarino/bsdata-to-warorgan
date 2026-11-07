@@ -113,6 +113,33 @@ public class IntegrationTests
 
     [IntegrationTheory]
     [MemberData(nameof(Factions))]
+    public void Detachments_have_costs_rules_and_well_formed_enhancements(string file)
+    {
+        var warnings = new List<string>();
+        var roster = RosterExtractor.Extract(Database.Value, file, warnings);
+        Assert.InRange(roster.Detachments.Count, 8, 40);
+        Assert.Equal(roster.Detachments.Count, roster.Detachments.Select(d => d.Name).Distinct().Count());
+        foreach (var d in roster.Detachments)
+        {
+            Assert.True(d.Cost >= 1, $"{d.Name}: cost");
+            Assert.NotNull(d.Rule);
+            Assert.All(d.Enhancements, e =>
+            {
+                Assert.False(string.IsNullOrWhiteSpace(e.Description), $"{d.Name}/{e.Name}: no description");
+                Assert.True(e.Cost >= 0, $"{d.Name}/{e.Name}: cost");
+                if (e.Features.HasFlag(WarOrgan.Model.Faction.EnhancementFeature.Upgrade))
+                    Assert.True(e.RequiredUnitNames.Count + e.RequiredKeywords.Count + e.RequiredOneOfKeywords.Count + e.ExcludedKeywords.Count > 0,
+                        $"{d.Name}/{e.Name}: upgrade without a unit restriction");
+            });
+        }
+        Assert.Contains(roster.Detachments, d => d.Enhancements.Count > 0);
+        // Required unit names must be real units, or the enhancement could never be taken.
+        var ids = roster.Units.Select(u => u.Id).ToHashSet();
+        Assert.All(roster.Detachments.SelectMany(d => d.Enhancements).SelectMany(e => e.RequiredUnitNames), n => Assert.Contains(n, ids));
+    }
+
+    [IntegrationTheory]
+    [MemberData(nameof(Factions))]
     public void Wargear_ids_resolve_and_every_weapon_is_selectable(string file)
     {
         var (units, warnings) = ExtractAll(file);

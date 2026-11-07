@@ -4,7 +4,7 @@ using WarOrganConverter.Resolve;
 
 namespace WarOrganConverter.Extract;
 
-public sealed record RosterResult(IReadOnlyList<ResolvedUnit> Resolved, List<Unit> Units, HashSet<string> ArmyRules);
+public sealed record RosterResult(IReadOnlyList<ResolvedUnit> Resolved, List<Unit> Units, HashSet<string> ArmyRules, List<WarOrgan.Model.Faction.Detachment> Detachments);
 
 /// <summary>Everything that is extracted for one catalogue's roster, in the order the stages depend on each other.</summary>
 public static class RosterExtractor
@@ -16,6 +16,7 @@ public static class RosterExtractor
         var extractor = new UnitExtractor(db);
         var units = resolved.Select(r => extractor.Extract(r, armyRules, warnings)).ToList();
         new LeaderExtractor(db).Apply(resolved, units, warnings);
-        return new RosterResult(resolved, units, armyRules);
+        var detachments = new DetachmentExtractor(db).Extract(catalogueFile, resolved, units, warnings);
+        return new RosterResult(resolved, units, armyRules, detachments);
     }
 }
