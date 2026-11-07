@@ -57,6 +57,7 @@ public static class DatasetBuilder
     {
         var rules = SourceRules(db);
         var rosters = new List<FactionRoster>();
+        var allyUnits = new List<(string Roster, Dictionary<string, List<string>> ByFaction)>();
         var factions = new List<FactionInfo>();
 
         foreach (var (file, root) in SelectCatalogues(db, settings.Catalogues))
@@ -79,11 +80,13 @@ public static class DatasetBuilder
                     roster.ArmyRules.Add(new UnitInfoSection { Title = BsdDatabase.Str(r.Node, "name")!.Trim(), Text = text.Trim() });
             foreach (var w in warnings) report.Warnings.Add($"{roster.Name}: {w}");
             rosters.Add(roster);
+            allyUnits.Add((roster.Name, extracted.ImportedByFaction ?? []));
             factions.Add(FactionFor(catalogueName, roster));
             report.Units += roster.Units.Count;
         }
         if (rosters.Count == 0) throw new InvalidOperationException("No catalogues matched; nothing to convert.");
         report.Rosters = rosters.Count;
+        AddAllies(factions, rosters, allyUnits, report);
 
         var unmatched = new List<string>();
         var definition = new DataSetDefinition
@@ -107,6 +110,46 @@ public static class DatasetBuilder
         var info = new DataSetInfo(settings.DataSetId, settings.Version, DataSetInfo.CurrentDataSetFormatVersion, DateTime.UtcNow);
         var model = new DatasetBuildModel(info, definition, rosters.Select(r => new FactionRosterEntry(r)).ToList(), []);
         return model;
+    }
+
+    /// <summary>
+    /// A faction that imports units of another faction gets that faction as an ally, when the ally's roster is part of the dataset.
+    /// The units it may take are listed in an include rule when they are not the whole roster of the ally.
+    /// </summary>
+    private static void AddAllies(List<FactionInfo> factions, List<FactionRoster> rosters, List<(string Roster, Dictionary<string, List<string>> ByFaction)> imports, BuildReport report)
+    {
+        foreach (var (rosterName, byFaction) in imports)
+        {
+            var faction = factions.First(f => f.Name == rosterName);
+            // A unit the catalogue links itself but that belongs to another faction of the dataset (only that faction's keyword) is an allied unit too.
+            var own = rosters.First(r => r.Name == rosterName);
+            var otherKeywords = factions.Where(f => f != faction).Select(f => f.FactionKeyword).ToHashSet(StringComparer.Ordinal);
+            var foreign = own.Units.Where(u => u.FactionKeywords.Count > 0 && !u.FactionKeywords.Contains(faction.FactionKeyword) && u.FactionKeywords.All(otherKeywords.Contains)).ToList();
+            foreach (var u in foreign)
+            {
+                own.Units.Remove(u);
+                var key = u.FactionKeywords[0];
+                if (!byFaction.TryGetValue(key, out var list)) byFaction[key] = list = [];
+                list.Add(u.Id);
+            }
+            if (foreign.Count > 0) faction.AdditionalFactionKeywords = faction.AdditionalFactionKeywords?.Where(k => !otherKeywords.Contains(k)).ToList() is { Count: > 0 } kept ? kept : null;
+            foreach (var (keyword, ids) in byFaction.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+            {
+                var allyFaction = factions.FirstOrDefault(f => f.FactionKeyword == keyword && f != faction);
+                if (allyFaction is null)
+                {
+                    report.Warnings.Add($"{rosterName}: {ids.Count} units of '{keyword}' are imported; that faction is not part of this dataset, so they are left out (add its catalogue to include them)");
+                    continue;
+                }
+                var allyRoster = rosters.First(r => r.Name == allyFaction.Name);
+                var allowed = ids.Where(id => allyRoster.Units.Any(u => u.Id == id)).Distinct().ToList();
+                if (allowed.Count == 0) continue;
+                var ally = new FactionAlly { FactionKeyword = keyword };
+                if (allowed.Count < allyRoster.Units.Count)
+                    ally.UnitIncludeRules = [new UnitIncludeRule { AffectedUnitsFilter = allowed }];
+                (faction.Allies ??= []).Add(ally);
+            }
+        }
     }
 
     /// <summary>Runs the builder's validation; throws when the dataset is not valid.</summary>
@@ -144,7 +187,8 @@ public static class DatasetBuilder
             if (root["library"] is JsonValue v && v.TryGetValue<bool>(out var lib) && lib) continue;
             var name = BsdDatabase.Str(root, "name") ?? file;
             if (wanted.Count > 0 && !wanted.Any(w => w.Equals(name, StringComparison.OrdinalIgnoreCase) || w.Equals(DisplayName(name), StringComparison.OrdinalIgnoreCase)
-                                                    || w.Equals(Path.GetFileNameWithoutExtension(file), StringComparison.OrdinalIgnoreCase)))
+                                                    || w.Equals(Path.GetFileNameWithoutExtension(file), StringComparison.OrdinalIgnoreCase)
+                                                    || w.Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase)))
                 continue;
             yield return (file, root);
         }

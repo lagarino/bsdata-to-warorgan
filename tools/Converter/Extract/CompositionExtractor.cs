@@ -50,9 +50,34 @@ public sealed class CompositionExtractor(BsdDatabase db)
             warnings.Add($"{name}: model name '{dup.Key}' appears {dup.Count()} times; renamed the later ones");
         }
 
+        if (models.Count == 0 && SizeUpgrades(unitEntry) is { Count: > 0 } sizes)
+        {
+            // A datasheet whose unit sizes are upgrade entries ("5 models", "10 models") has no model entries: one model type of that size.
+            models.Add(Compose(unitEntry, name, sizes.Min(), sizes.Max()));
+            return new Result(models, sizes.Min(), sizes.Max(), _sources, _members);
+        }
         if (models.Count == 0) warnings.Add($"{name}: no model entries found");
         if (max < min) { warnings.Add($"{name}: inconsistent model limits ({min}-{max})"); max = min; }
         return new Result(models, min, max, _sources, _members);
+    }
+
+    private static readonly System.Text.RegularExpressions.Regex SizeName = new(@"^\s*(\d+)\s+models?\s*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    /// <summary>Unit sizes named by upgrade entries such as "5 models", directly under the unit or its groups.</summary>
+    private List<int> SizeUpgrades(JsonObject unit)
+    {
+        var sizes = new List<int>();
+        void Visit(JsonObject n)
+        {
+            foreach (var child in Children(n))
+            {
+                var m = SizeName.Match(BsdDatabase.Str(child, "name") ?? "");
+                if (m.Success && BsdDatabase.Str(child, "type") != "model") sizes.Add(int.Parse(m.Groups[1].Value));
+                else if (IsGroup(child)) Visit(child);
+            }
+        }
+        Visit(unit);
+        return sizes;
     }
 
     /// <summary>Collects models directly under the node and inside groups; groups without models of their own are descended into.</summary>

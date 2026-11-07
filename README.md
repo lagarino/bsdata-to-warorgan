@@ -10,7 +10,7 @@ computer.
 
 > **Status: early development, no release yet.** The tool converts BSData catalogues for one tabletop wargame (the first
 > target of the project): units, statlines, weapons, wargear, points, army rules, leaders, detachments, enhancements and
-> detachment effects. Allies, shared multi-catalogue rosters and stratagems are not converted yet. Generated datasets
+> detachment effects. Allies are converted when both catalogues are in the same run; stratagems are not converted yet. Generated datasets
 > have been imported into WarOrgan and used to build army lists. See [What works today](#3-what-works-today).
 
 ---
@@ -137,7 +137,7 @@ Every phase of the converter ships with tests; see [docs/05-plan](docs/05-plan.m
 | Enhancements (cost, text, who may take them), including upgrade enhancements limited to one unit | done |
 | Detachment effects on datasheets (weapon and unit stat changes, added keywords and abilities and categories, unlocked options) | done; list-building limit changes and a few effects under extra conditions are reported, not converted |
 | Dataset definition, ability lists, validation with the WarOrgan builder, zip | done |
-| Allies and shared rosters (catalogues that include another catalogue's units as their own) | planned |
+| Allies (units imported from another faction's catalogue become an ally entry; include both catalogues in one conversion) | done; allied points caps and ally-only prices are not converted |
 | Stratagems (optional download from a third-party website, local cache) | planned |
 | Settings file and cache commands | planned |
 

@@ -165,7 +165,12 @@ What is still open:
   specials plus a main troop), WarOrgan has no cross-model cap. The unit's size is right (it comes from the points tiers), but
   the model limits can add up to more than the cap.
 - **Effects of a detachment under extra conditions** (a few units) and list-building limit changes, as listed for the first catalogues.
-- **Allies and shared rosters.** Units that a catalogue imports from another catalogue are left out of its roster, and no ally
-  relationship is written. Catalogues that list another army's units as their own are not converted yet.
+- **Allies** [mostly closed]. Units imported from another catalogue are split by faction keyword: units with the catalogue's own
+  keyword (a library that belongs to the faction) join its roster; units of another faction become a `FactionInfo.Allies` entry,
+  with a `UnitIncludeRule` (`AffectedUnitsFilter`, matched by unit id as the app does) when the faction may take only part of the
+  ally's roster. Units a catalogue links itself that belong to another converted faction are treated the same way. The ally's
+  catalogue must be part of the same conversion; otherwise the units are left out and `convert` says so. Open: allied points caps
+  (`ArmyPercentageRestriction`, not in the source data), the higher points of some units when allied (G1), and a library with no
+  matching faction catalogue (for example a titans library).
 - **Other families.** The large parent faction with its sub-factions, the faction families that include other factions, and the
   library-only catalogues are not converted.

@@ -228,6 +228,22 @@ public class IntegrationTests
             foreach (var s in u.StatLines) Assert.Equal(s.StatName!.Trim(), s.StatName);
         }
     }
+
+    [IntegrationFact]
+    public void Imported_units_of_other_factions_become_allies_and_validate()
+    {
+        var settings = new WarOrganConverter.Emit.BuildSettings("Ally Test", new Version(1, 0, 0, 0), Path.GetTempPath(),
+            ["Imperium - Adeptus Custodes.json", "Imperium - Imperial Knights.json", "Imperium - Agents of the Imperium.json"]);
+        var model = WarOrganConverter.Emit.DatasetBuilder.Build(Database.Value, settings, new WarOrganConverter.Emit.BuildReport());
+        WarOrganConverter.Emit.DatasetBuilder.Validate(model);
+        var custodes = model.Definition.Factions.Single(f => f.Name == "Adeptus Custodes");
+        Assert.Contains(custodes.Allies!, a => a.FactionKeyword == "Imperial Knights");
+        Assert.Contains(custodes.Allies!, a => a.FactionKeyword == "Agents of the Imperium");
+        // The ally roster is not restricted when the faction imports all of it; the Knights roster has more units than Custodes may take? both cases must name only existing units.
+        var rosterIds = model.Rosters.SelectMany(r => r.Roster.Units).Select(u => u.Id).ToHashSet();
+        foreach (var rule in custodes.Allies!.SelectMany(a => a.UnitIncludeRules ?? []))
+            Assert.All(rule.AffectedUnitsFilter!, id => Assert.Contains(id, rosterIds));
+    }
 }
 
 public class IntegrationTheoryAttribute : TheoryAttribute
