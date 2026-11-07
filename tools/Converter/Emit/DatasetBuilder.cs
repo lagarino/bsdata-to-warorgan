@@ -60,7 +60,7 @@ public static class DatasetBuilder
         var allyUnits = new List<(string Roster, Dictionary<string, List<string>> ByFaction, string? Parent)>();
         var factions = new List<FactionInfo>();
 
-        foreach (var (file, root) in SelectCatalogues(db, settings.Catalogues))
+        foreach (var (file, root) in SelectCatalogues(db, settings.Catalogues, report))
         {
             var catalogueName = BsdDatabase.Str(root, "name") ?? file;
             var warnings = new List<string>();
@@ -91,6 +91,7 @@ public static class DatasetBuilder
         if (rosters.Count == 0) throw new InvalidOperationException("No catalogues matched; nothing to convert.");
         report.Rosters = rosters.Count;
         AddAllies(factions, rosters, allyUnits, report);
+        report.Units = rosters.Sum(r => r.Units.Count);
 
         var unmatched = new List<string>();
         var definition = new DataSetDefinition
@@ -185,13 +186,21 @@ public static class DatasetBuilder
             """;
     }
 
-    private static IEnumerable<(string File, JsonObject Root)> SelectCatalogues(BsdDatabase db, IReadOnlyList<string> wanted)
+    /// <summary>Catalogues that are another game's armies (titans); converting all catalogues skips them, naming one converts it anyway.</summary>
+    private static bool NotSupportedByDefault(string name) => name.Contains("Titanicus", StringComparison.OrdinalIgnoreCase);
+
+    private static IEnumerable<(string File, JsonObject Root)> SelectCatalogues(BsdDatabase db, IReadOnlyList<string> wanted, BuildReport report)
     {
         foreach (var (file, root) in db.Roots)
         {
             if (BsdDatabase.Str(root, "type") == "gameSystem" || Scope.IsExcludedFile(file)) continue;
             if (root["library"] is JsonValue v && v.TryGetValue<bool>(out var lib) && lib) continue;
             var name = BsdDatabase.Str(root, "name") ?? file;
+            if (wanted.Count == 0 && NotSupportedByDefault(name))
+            {
+                report.Notes.Add($"{name} is not converted unless you name it with --faction (a separate game's army; its datasheets are not validated).");
+                continue;
+            }
             if (wanted.Count > 0 && !wanted.Any(w => w.Equals(name, StringComparison.OrdinalIgnoreCase) || w.Equals(DisplayName(name), StringComparison.OrdinalIgnoreCase)
                                                     || w.Equals(Path.GetFileNameWithoutExtension(file), StringComparison.OrdinalIgnoreCase)
                                                     || w.Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase)))

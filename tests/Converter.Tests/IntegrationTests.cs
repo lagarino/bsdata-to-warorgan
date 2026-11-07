@@ -35,7 +35,7 @@ public class IntegrationTests
          ["Imperium - Adepta Sororitas.json"], ["Aeldari - Craftworlds.json"], ["Aeldari - Drukhari.json"], ["Tyranids.json"],
          ["Imperium - Adeptus Custodes.json"], ["Imperium - Adeptus Mechanicus.json"],
          ["Imperium - Imperial Knights.json"], ["Imperium - Agents of the Imperium.json"], ["Chaos - Chaos Space Marines.json"], ["Chaos - Death Guard.json"],
-         ["Chaos - Emperor's Children.json"], ["Chaos - Thousand Sons.json"], ["Chaos - World Eaters.json"], ["Chaos - Chaos Daemons.json"], ["Chaos - Chaos Knights.json"],
+         ["Chaos - Emperor's Children.json"], ["Chaos - Thousand Sons.json"], ["Chaos - World Eaters.json"], ["Chaos - Chaos Daemons.json"], ["Chaos - Chaos Knights.json"], ["Imperium - Astra Militarum.json"], ["Genestealer Cults.json"],
          ["Imperium - Space Marines.json"], ["Imperium - Ultramarines.json"], ["Imperium - Blood Angels.json"], ["Imperium - Dark Angels.json"], ["Imperium - Space Wolves.json"], ["Imperium - Deathwatch.json"], ["Imperium - Black Templars.json"], ["Imperium - Imperial Fists.json"], ["Imperium - Iron Hands.json"], ["Imperium - Raven Guard.json"], ["Imperium - Salamanders.json"], ["Imperium - White Scars.json"]]);
 
     private static (List<Unit> Units, List<string> Warnings) ExtractAll(string file)
@@ -236,6 +236,19 @@ public class IntegrationTests
             foreach (var w in u.Weapons.SelectMany(s => s.Weapons)) Assert.Equal(w.Id!.Trim(), w.Id);
             foreach (var s in u.StatLines) Assert.Equal(s.StatName!.Trim(), s.StatName);
         }
+    }
+
+    [IntegrationFact]
+    public void Converting_every_catalogue_at_once_validates_and_skips_the_unsupported_ones()
+    {
+        // What a user gets without --faction: every army together, so allies, sub-factions and shared keywords must all agree.
+        var settings = new WarOrganConverter.Emit.BuildSettings("All Test", new Version(1, 0, 0, 0), Path.GetTempPath(), []);
+        var report = new WarOrganConverter.Emit.BuildReport();
+        var model = WarOrganConverter.Emit.DatasetBuilder.Build(Database.Value, settings, report);
+        WarOrganConverter.Emit.DatasetBuilder.Validate(model);
+        Assert.True(model.Rosters.Count >= 30);
+        Assert.DoesNotContain(model.Rosters, r => r.Roster.Name.Contains("Titanicus"));
+        Assert.Contains(report.Notes, n => n.Contains("Titanicus"));
     }
 
     [IntegrationFact]

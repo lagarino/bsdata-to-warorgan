@@ -50,6 +50,19 @@ public sealed class CompositionExtractor(BsdDatabase db)
             warnings.Add($"{name}: model name '{dup.Key}' appears {dup.Count()} times; renamed the later ones");
         }
 
+        if (models.Count == 0 && SizeOptions(unitEntry) is { Models.Count: > 0 } options)
+        {
+            // A datasheet whose sizes are upgrade entries that each hold their own models ("1 sergeant and 9 troopers", "2 sergeants and
+            // 18 troopers"): every model type may appear from its smallest to its largest count over the options.
+            foreach (var m in options.Models)
+            {
+                var composed = Compose(m.Source, m.Name, m.Lo, m.Hi);
+                models.Add(composed);
+                if (m.Group is not null)
+                    _members[composed] = new Member(m.Group, null, m.GroupMin, m.GroupMax, null, BsdDatabase.Str(m.Group, "defaultSelectionEntryId") == BsdDatabase.Str(m.Source, "id"));
+            }
+            return new Result(models, options.Min, options.Max, _sources, _members);
+        }
         if (models.Count == 0 && SizeUpgrades(unitEntry) is { Count: > 0 } sizes)
         {
             // A datasheet whose unit sizes are upgrade entries ("5 models", "10 models") has no model entries: one model type of that size.
@@ -59,6 +72,78 @@ public sealed class CompositionExtractor(BsdDatabase db)
         if (models.Count == 0) warnings.Add($"{name}: no model entries found");
         if (max < min) { warnings.Add($"{name}: inconsistent model limits ({min}-{max})"); max = min; }
         return new Result(models, min, max, _sources, _members);
+    }
+
+    private sealed record OptionModel(string Name, JsonObject Source, int Lo, int Hi, JsonObject? Group, int? GroupMin, int? GroupMax);
+    private sealed record SizeOptionsResult(List<OptionModel> Models, int Min, int Max);
+
+    /// <summary>Upgrade entries (below the unit or its groups) that hold models: one per allowed unit size.</summary>
+    private SizeOptionsResult? SizeOptions(JsonObject unit)
+    {
+        var options = new List<JsonObject>();
+        void Find(JsonObject n)
+        {
+            foreach (var child in Children(n))
+            {
+                if (BsdDatabase.Str(child, "type") == "upgrade" && HoldsModels(child)) options.Add(child);
+                else if (IsGroup(child)) Find(child);
+            }
+        }
+        Find(unit);
+        if (options.Count == 0) return null;
+
+        var perOption = options.Select(o => { var list = new List<OptionModel>(); var t = Collect(o, list, BsdDatabase.Str(o, "name") ?? ""); return (list, t.Min, t.Max); }).ToList();
+        var names = perOption.SelectMany(o => o.list.Select(m => m.Name)).Distinct().ToList();
+        var result = new List<OptionModel>();
+        foreach (var name in names)
+        {
+            var per = perOption.Select(o => o.list.Where(m => m.Name == name).ToList()).ToList();
+            var first = per.First(l => l.Count > 0)[0];
+            var groupMax = per.Where(l => l.Count > 0).Select(l => l[0].GroupMax).Where(g => g is not null).DefaultIfEmpty(null).Max();
+            var groupMin = per.Select(l => l.Count > 0 ? l[0].GroupMin : 0).Where(g => g is not null).DefaultIfEmpty(null).Min();
+            result.Add(first with { Lo = per.Min(l => l.Sum(m => m.Lo)), Hi = per.Max(l => l.Sum(m => m.Hi)), GroupMin = groupMin, GroupMax = groupMax });
+        }
+        return new SizeOptionsResult(result, perOption.Min(o => o.Min), perOption.Max(o => o.Max));
+    }
+
+    private bool HoldsModels(JsonObject node) => Children(node).Any(c => BsdDatabase.Str(c, "type") == "model" || (IsGroup(c) && HoldsModels(c)));
+
+    /// <summary>Models below an option with their counts; a group's own size is the count of the models directly in it.</summary>
+    private (int Min, int Max) Collect(JsonObject node, List<OptionModel> into, string optionName)
+    {
+        int min = 0, max = 0;
+        foreach (var child in Children(node))
+        {
+            if (BsdDatabase.Str(child, "type") == "model")
+            {
+                var (mn, mx) = Limits(child);
+                var lo = mn ?? 1;
+                var hi = mx ?? lo;
+                // A model with no size of its own is counted in the option's name ("2 Sergeants and 18 Troopers").
+                if (mn is null && mx is null && System.Text.RegularExpressions.Regex.Match(optionName, @"(\d+)\s+" + System.Text.RegularExpressions.Regex.Escape(BsdDatabase.Str(child, "name")?.Trim() ?? "?") + @"s?\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase) is { Success: true } named)
+                    lo = hi = int.Parse(named.Groups[1].Value);
+                into.Add(new OptionModel(BsdDatabase.Str(child, "name")?.Trim() ?? "?", child, lo, hi, null, null, null));
+                min += lo; max += hi;
+            }
+            else if (IsGroup(child) && HoldsModels(child))
+            {
+                var inner = new List<OptionModel>();
+                var (cmn, cmx) = Collect(child, inner, optionName);
+                var (gmn, gmx) = Limits(child);
+                // One model type with a size takes that size; variants of several types share the group's total and are merged later.
+                var single = inner.Count == 1;
+                for (var i = 0; i < inner.Count; i++)
+                {
+                    var m = inner[i];
+                    var lo = single ? gmn ?? m.Lo : 0;
+                    var hi = gmx is { } g ? (single ? g : Math.Min(m.Hi, g)) : m.Hi;
+                    inner[i] = m with { Lo = lo, Hi = hi, Group = single ? null : child, GroupMin = gmn, GroupMax = gmx };
+                }
+                into.AddRange(inner);
+                min += gmn ?? cmn; max += gmx ?? cmx;
+            }
+        }
+        return (min, max);
     }
 
     private static readonly System.Text.RegularExpressions.Regex SizeName = new(@"^\s*(\d+)\s+models?\s*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);

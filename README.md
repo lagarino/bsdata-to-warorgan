@@ -53,7 +53,7 @@ warorgan-converter convert --bsdata "C:\path\to\bsdata-repo" --output "C:\path\t
 | `--output <folder>` | yes | Where to write the dataset. Created if missing. Keep it **outside** this repository. |
 | `--dataset-id <id>` | yes | The name of the dataset inside WarOrgan, 3-30 characters: letters, digits, space and `- _ ( ) [ ]`. No default, you choose. Keep the same id when you regenerate the dataset, so existing army lists keep working. |
 | `--dataset-version <a.b.c.d>` | no | Version number, default `1.0.0.0`. Increase it whenever you generate an updated dataset for yourself. |
-| `--faction <name>` | no | Which catalogue to convert: its name, its short name (the part after the category prefix) or its file name. Repeat the option for several. Without it, every catalogue is attempted, but only some are supported so far: others may fail validation until allies and shared rosters are done. |
+| `--faction <name>` | no | Which catalogue to convert: its name, its short name (the part after the category prefix) or its file name. Repeat the option for several. Without it, every army catalogue is converted into one dataset (library catalogues are used as sources, not converted; the two titan catalogues, a separate game's armies, are skipped unless you name them). |
 
 Other commands, for looking at the data without writing a dataset:
 
@@ -147,8 +147,8 @@ Every phase of the converter ships with tests; see [docs/05-plan](docs/05-plan.m
 | Stratagems (optional download from a third-party website, local cache) | planned |
 | Settings file and cache commands | planned |
 
-Thirty-two catalogues of the first target convert and pass the builder's validation and the stricter integration checks. Two of
-them have been checked by hand in the app; the others have not been checked unit by unit.
+Every army catalogue of the first target (thirty-four) converts, together or one by one, and passes the builder's validation and the stricter integration checks. Three of
+them (Orks, Necrons, Leagues of Votann) have been checked by hand in the app; the others have not been checked unit by unit.
 
 Known limits: options that are only shown under certain conditions (a selected detachment, another option) are not
 evaluated beyond the cases above, so the result is the baseline view; "choose N of these" groups become optional

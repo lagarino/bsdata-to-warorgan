@@ -48,6 +48,9 @@ var db = BsdDatabase.Load(bsdata);
 
 if (command == "convert")
 {
+    Console.WriteLine("Notice: the dataset this creates contains game content converted from the data you gave it. It is for your own use:");
+    Console.WriteLine("do not publish or share it. This tool is unofficial and not connected to WarOrgan, BSData or any games publisher.");
+    Console.WriteLine();
     var id = Opt("--dataset-id");
     var output = Opt("--output");
     if (id is null || output is null || !DataSetValidation.IsValidDataSetId(id))
@@ -73,6 +76,7 @@ if (command == "convert")
         Console.Error.WriteLine($"Conversion failed: {ex.Message}");
     }
     Console.WriteLine($"Converted {report.Units} units in {report.Rosters} roster(s).");
+    foreach (var n in report.Notes) Console.WriteLine("  note: " + n);
     foreach (var w in report.Warnings) Console.WriteLine("  warning: " + w);
     LoggingBuffer.Print(waitForInput: false);
     if (report.ZipPath is not null) Console.WriteLine($"{Environment.NewLine}Dataset written: {report.ZipPath}");

@@ -192,7 +192,12 @@ public sealed class DetachmentExtractor(BsdDatabase db)
         ApplyEligibility(e, elig, carriers, units, warnings, name);
         if (forcedUnit is not null) AddUnique(e.RequiredUnitNames, forcedUnit);
 
-        if (!isUpgrade && text is not null) AddKeywordsFromText(e, text, units);
+        if (text is not null && (!isUpgrade || (e.RequiredUnitNames.Count == 0 && e.RequiredKeywords.Count == 0 && e.RequiredOneOfKeywords.Count == 0))
+            && !AddKeywordsFromText(e, text, units) && isUpgrade)
+        {
+            warnings.Add($"enhancement '{name}': restricted to a model that is not in this roster; left out");
+            return null;
+        }
         if (text is not null && e.RequiredUnitNames.Count == 0 && AddUnitsFromText(e, text, units) == UnitText.Unresolved)
         {
             warnings.Add($"enhancement '{name}': restricted to a unit that is not in this roster; left out");
@@ -204,10 +209,11 @@ public sealed class DetachmentExtractor(BsdDatabase db)
     }
 
     /// <summary>"**ORKS** **PSYKER** model only." or "NECRONS model only.": the words before "model only" are required keywords.</summary>
-    private static void AddKeywordsFromText(Enhancement e, string text, IReadOnlyList<Unit> units)
+    private static bool AddKeywordsFromText(Enhancement e, string text, IReadOnlyList<Unit> units)
     {
         var match = Regex.Match(text, @"^\s*([^.:\r\n]{1,80}?)\s+model only", RegexOptions.IgnoreCase);
-        if (!match.Success) return;
+        if (!match.Success) return true;
+        var before = e.RequiredKeywords.Count;
         var known = units.SelectMany(u => u.Keywords.Concat(u.FactionKeywords)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         var words = match.Groups[1].Value.Replace("*", " ").Split(' ', StringSplitOptions.RemoveEmptyEntries);
         for (var i = 0; i < words.Length;)
@@ -224,6 +230,8 @@ public sealed class DetachmentExtractor(BsdDatabase db)
             if (hit is not null) AddUnique(e.RequiredKeywords, hit);
             i += Math.Max(1, used);
         }
+        // false: the text names a model that no unit of the roster is
+        return e.RequiredKeywords.Count > before;
     }
 
     /// <summary>"**NAME** unit only.": the words before "unit only" name a unit of the roster (or else keywords).</summary>
