@@ -167,3 +167,25 @@ public class EmitTests
         Assert.NotNull(IoUtils.LoadRequiredFile<DataSetDefinition>(Path.Combine(dir, "DataSetDefinition.json")));
     }
 }
+
+public class TextCleanerTests
+{
+    [Theory]
+    [InlineData("a friendly ^^***Necrons***^^ unit", "a friendly Necrons unit")]
+    [InlineData("an ^^**Adepta Sororitas Character^^** is", "an Adepta Sororitas Character is")]
+    [InlineData("has the [**SUSTAINED HITS 1**] ability", "has the [SUSTAINED HITS 1] ability")]
+    [InlineData("INFANTRY\u00a0models", "INFANTRY models")]
+    [InlineData("Feel No Pain 3+*", "Feel No Pain 3+*")]   // a single asterisk is content, not markup
+    public void Markup_is_removed_from_texts(string text, string expected) => Assert.Equal(expected, WarOrganConverter.Emit.TextCleaner.Clean(text));
+
+    [Fact]
+    public void Texts_and_descriptions_deep_in_the_model_are_cleaned_but_other_fields_are_not()
+    {
+        var unit = new WarOrgan.Model.Unit.Unit { Id = "^^X^^", DisplayName = "**Y**" };
+        unit.UnitAbilities.Add(new WarOrgan.Model.Unit.UnitInfoSection { Title = "**T**", Text = "^^**a**^^ b" });
+        WarOrganConverter.Emit.TextCleaner.CleanAll(new List<WarOrgan.Model.Unit.Unit> { unit });
+        Assert.Equal("a b", unit.UnitAbilities[0].Text);
+        Assert.Equal("**T**", unit.UnitAbilities[0].Title);
+        Assert.Equal("^^X^^", unit.Id);
+    }
+}

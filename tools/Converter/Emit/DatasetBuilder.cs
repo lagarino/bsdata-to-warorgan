@@ -113,6 +113,7 @@ public static class DatasetBuilder
 
         var info = new DataSetInfo(settings.DataSetId, settings.Version, DataSetInfo.CurrentDataSetFormatVersion, DateTime.UtcNow);
         var model = new DatasetBuildModel(info, definition, rosters.Select(r => new FactionRosterEntry(r)).ToList(), []);
+        TextCleaner.CleanAll(model);
         return model;
     }
 

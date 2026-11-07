@@ -181,6 +181,8 @@ What is still open:
 - **Cannot be represented in the WarOrgan model** (so they stay as documented, not as tasks): a price that depends on the count of one
   model group or optional model type (Windriders, Wolf Guard Headtakers), one size cap shared by differently-statlined model types,
   list-building limit changes of a detachment, and ally-only prices (G1). The Titans libraries have no faction of their own.
+- **Text markup.** BSData texts use "^^" (keywords) and "**" (emphasis), which the app shows literally. `TextCleaner` removes them from
+  every text, description, value and keyword list before the dataset is validated, and turns non-breaking spaces into spaces.
 - **Datasheets without a faction category** (some characters) get the keyword of the roster they are listed in.
 - **Sub-factions** [closed for the army families of the first target]. A catalogue whose own datasheets carry a parent faction's keyword
   next to its own (a chapter of a parent army), or that is mostly made of the parent's imported units, lists the parent as an ally
