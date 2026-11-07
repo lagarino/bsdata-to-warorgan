@@ -1,0 +1,139 @@
+using WarOrgan.Model.Unit;
+using WarOrganConverter.Extract;
+using WarOrganConverter.Load;
+using WarOrganConverter.Resolve;
+
+namespace Converter.Tests;
+
+/// <summary>
+/// Runs only when WH40K_SRC points at a local checkout of a BSData repository; otherwise the tests are skipped.
+/// They hold the checks that were first done by hand on the real data: structural invariants that should keep
+/// holding when the BSData repository is updated. They do not pin exact counts, which drift with the data.
+/// </summary>
+public class IntegrationFactAttribute : FactAttribute
+{
+    public IntegrationFactAttribute()
+    {
+        if (string.IsNullOrEmpty(IntegrationTests.Source))
+            Skip = "Set WH40K_SRC to a BSData checkout to run the integration tests.";
+    }
+}
+
+public class IntegrationTests
+{
+    public static string? Source => Environment.GetEnvironmentVariable("WH40K_SRC");
+
+    private static readonly Lazy<BsdDatabase> Database = new(() => BsdDatabase.Load(Source!));
+
+    public static IEnumerable<object[]> Factions =>
+        [["Orks.json"], ["Necrons.json"]];
+
+    private static (List<Unit> Units, List<string> Warnings) ExtractAll(string file)
+    {
+        var db = Database.Value;
+        var roster = new RosterResolver(db).Resolve(file);
+        var army = UnitExtractor.FindArmyRules(roster);
+        var warnings = new List<string>();
+        var extractor = new UnitExtractor(db);
+        return (roster.Select(u => extractor.Extract(u, army, warnings)).ToList(), warnings);
+    }
+
+    [IntegrationFact]
+    public void Every_catalogue_loads_and_resolves_a_roster()
+    {
+        var db = Database.Value;
+        var resolver = new RosterResolver(db);
+        foreach (var (file, root) in db.Roots.Where(kv => BsdDatabase.Str(kv.Value, "type") != "gameSystem" && !Scope.IsExcludedFile(kv.Key)))
+            Assert.NotNull(resolver.Resolve(file));
+    }
+
+    [IntegrationTheory]
+    [MemberData(nameof(Factions))]
+    public void Roster_has_a_plausible_size_and_no_out_of_scope_entries(string file)
+    {
+        var db = Database.Value;
+        var roster = new RosterResolver(db).Resolve(file);
+        Assert.InRange(roster.Count, 20, 200);
+        Assert.DoesNotContain(roster, u => Scope.IsExcludedUnitName(BsdDatabase.Str(u.Entry, "name")));
+    }
+
+    [IntegrationTheory]
+    [MemberData(nameof(Factions))]
+    public void Every_unit_has_statlines_models_and_points(string file)
+    {
+        var (units, _) = ExtractAll(file);
+        foreach (var u in units)
+        {
+            Assert.True(u.StatLines.Count > 0, $"{u.Id}: no statline");
+            Assert.True(u.UnitComposition.ModelCompositions.Count > 0, $"{u.Id}: no model composition");
+            Assert.True(u.Points.Count > 0, $"{u.Id}: no points");
+            Assert.All(u.Points, p => Assert.True(p.Cost >= 0 && p.ModelCount > 0, $"{u.Id}: bad tier"));
+            Assert.Equal(u.StatLines.Count, u.StatLines.Select(s => s.StatName).Distinct().Count());
+        }
+    }
+
+    [IntegrationTheory]
+    [MemberData(nameof(Factions))]
+    public void Every_model_refers_to_an_existing_statline_and_unique_name(string file)
+    {
+        var (units, _) = ExtractAll(file);
+        foreach (var u in units)
+        {
+            var models = u.UnitComposition.ModelCompositions;
+            var dupes = models.GroupBy(m => m.ModelName).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+            Assert.True(dupes.Count == 0, $"{u.Id}: duplicate model names: {string.Join(", ", dupes)}");
+            foreach (var m in models)
+                Assert.Contains(u.StatLines, s => s.StatName == m.StatlineRef);
+        }
+    }
+
+    [IntegrationTheory]
+    [MemberData(nameof(Factions))]
+    public void Wargear_ids_resolve_and_every_weapon_is_selectable(string file)
+    {
+        var (units, warnings) = ExtractAll(file);
+        Assert.DoesNotContain(warnings, w => w.Contains("not part of any model"));
+        foreach (var u in units)
+        {
+            var known = u.Weapons.SelectMany(w => w.Weapons).Select(w => w.Id!)
+                .Concat(u.UnitComposition.WargearDefinitions.Select(d => d.Key)).ToHashSet();
+            foreach (var m in u.UnitComposition.ModelCompositions)
+                foreach (var g in m.Wargear)
+                {
+                    var used = g.InitialWargear.Concat(g.Options.SelectMany(o => (o.Replaces ?? []).Concat(o.Options.SelectMany(c => c.Items))));
+                    foreach (var id in used) Assert.True(known.Contains(id), $"{u.Id}.{m.ModelName}: unknown wargear id '{id}'");
+                }
+        }
+    }
+
+    [IntegrationTheory]
+    [MemberData(nameof(Factions))]
+    public void Points_conditions_in_scope_are_all_understood(string file)
+    {
+        var (_, warnings) = ExtractAll(file);
+        // "Convergence of Dominion" is a free fortification (cost 0); anything else here is a regression.
+        Assert.DoesNotContain(warnings, w => w.Contains("points: unsupported") && !w.Contains("Convergence of Dominion"));
+    }
+
+    [IntegrationTheory]
+    [MemberData(nameof(Factions))]
+    public void Ids_and_names_are_trimmed_as_the_builder_requires(string file)
+    {
+        var (units, _) = ExtractAll(file);
+        foreach (var u in units)
+        {
+            Assert.Equal(u.Id.Trim(), u.Id);
+            foreach (var w in u.Weapons.SelectMany(s => s.Weapons)) Assert.Equal(w.Id!.Trim(), w.Id);
+            foreach (var s in u.StatLines) Assert.Equal(s.StatName!.Trim(), s.StatName);
+        }
+    }
+}
+
+public class IntegrationTheoryAttribute : TheoryAttribute
+{
+    public IntegrationTheoryAttribute()
+    {
+        if (string.IsNullOrEmpty(IntegrationTests.Source))
+            Skip = "Set WH40K_SRC to a BSData checkout to run the integration tests.";
+    }
+}

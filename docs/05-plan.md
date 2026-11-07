@@ -93,6 +93,24 @@ Anything the evaluator cannot interpret goes to the report as "unconverted modif
 `annotation` modifiers (text appended to profiles) must be recognised and turned into keyword adjustments
 where they carry rules keywords (e.g. SUSTAINED HITS 1), otherwise surfaced as ability text.
 
+## Testing policy
+
+Every converter phase lands together with its tests, and a phase is not done until they pass.
+
+- **Unit tests** (`tests/Converter.Tests`, xUnit) use small synthetic BSData fixtures (`Fixtures.cs`), one test class per
+  stage: loader and scope, roster resolution, statlines/weapons/keywords/abilities, compositions and points, wargear. They
+  encode each behaviour verified by hand on the real data (for example ceiling tiers, copy-index tiers, wrapper
+  choices, unit-level fallbacks) so regressions are caught at build time. No real game text goes into fixtures (D5).
+- **Integration tests** (`IntegrationTests.cs`) run only when `WH40K_SRC` points at a BSData checkout. They assert
+  structural invariants on the real catalogues (every unit has statlines, models and points; every model refers to an
+  existing statline; wargear ids resolve; every weapon is selectable; in-scope points conditions are understood;
+  ids are trimmed). They found two real bugs on first run (missing statline reference for variant models, duplicate
+  model names), which is their purpose.
+- **Later phases** add: dataset emission and builder validation (run `WarOrgan.Data.BuildDataset` validation on the
+  generated dataset in a test), leaders, detachments and enhancements, stratagem parsing (synthetic HTML fixtures),
+  downloader and cache (fake HTTP handler, temp folder).
+- Run `dotnet test` before every commit; a CI workflow is added with the release workflow.
+
 ## Phase 3 - Releases (binary distribution)
 
 Publishing prebuilt executables as GitHub Releases (for example `v0.1.0`) is feasible:

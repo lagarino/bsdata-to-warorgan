@@ -67,6 +67,17 @@ dotnet run -- survey  --bsdata <path to BSData checkout>
 dotnet run -- extract --bsdata <path to BSData checkout> --faction "<catalogue name>"
 ```
 
+## Tests
+
+```
+dotnet test tests/Converter.Tests                              # unit tests on small synthetic fixtures, no game data needed
+WH40K_SRC=<path to BSData checkout> dotnet test tests/Converter.Tests   # also runs the integration tests on real data
+```
+
+Every phase of the converter ships with tests (see [docs/05-plan](docs/05-plan.md), "Testing policy"). The unit tests use
+invented fixtures only, so no game content lives in this repo. The integration tests are skipped unless `WH40K_SRC`
+is set; they check structural invariants on the real catalogues rather than exact counts.
+
 ## Provenance of the analysis
 
 | Input | Version examined |

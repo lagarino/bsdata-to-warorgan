@@ -14,27 +14,39 @@ namespace WarOrganConverter.Extract;
 public sealed class CompositionExtractor(BsdDatabase db)
 {
     private readonly EntryWalker _walker = new(db);
+    private Dictionary<ModelComposition, JsonObject> _sources = new();
+    private string? _fallbackStatline;
 
-    public sealed record Result(List<ModelComposition> Models, int MinModels, int MaxModels);
+    public sealed record Result(List<ModelComposition> Models, int MinModels, int MaxModels, Dictionary<ModelComposition, JsonObject> Sources);
 
     public Result Extract(JsonObject unitEntry, List<string> warnings)
     {
         var name = BsdDatabase.Str(unitEntry, "name") ?? "?";
         var models = new List<ModelComposition>();
+        _sources = new Dictionary<ModelComposition, JsonObject>();
+        _fallbackStatline = OwnUnitProfileName(unitEntry) ?? _walker.Profiles(unitEntry, "Unit").Select(f => BsdDatabase.Str(f.Profile, "name")).FirstOrDefault(n => n is not null);
         int min = 0, max = 0;
 
         if (BsdDatabase.Str(unitEntry, "type") == "model")
         {
             // A top-level model entry is a single-model datasheet.
             models.Add(Compose(unitEntry, name, 1, 1));
-            return new Result(models, 1, 1);
+            return new Result(models, 1, 1, _sources);
         }
 
         Process(unitEntry, models, ref min, ref max, name);
 
+        // The builder needs unique model names; two entries with one name are kept apart with a numeric suffix.
+        foreach (var dup in models.GroupBy(m => m.ModelName).Where(g => g.Count() > 1).ToList())
+        {
+            var i = 1;
+            foreach (var m in dup.Skip(1)) m.ModelName = $"{dup.Key} ({++i})";
+            warnings.Add($"{name}: model name '{dup.Key}' appears {dup.Count()} times; renamed the later ones");
+        }
+
         if (models.Count == 0) warnings.Add($"{name}: no model entries found");
         if (max < min) { warnings.Add($"{name}: inconsistent model limits ({min}-{max})"); max = min; }
-        return new Result(models, min, max);
+        return new Result(models, min, max, _sources);
     }
 
     /// <summary>Collects models directly under the node and inside groups; groups without models of their own are descended into.</summary>
@@ -72,19 +84,51 @@ public sealed class CompositionExtractor(BsdDatabase db)
                 }
                 min += gmn ?? sumMin;
                 max += gmx is { } gx ? Math.Min(gx, sumMax) : sumMax;
+                // Sub-groups of variant models (for example "Special Weapons") are counted inside the parent group's total.
+                foreach (var sub in Children(child).Where(c => IsGroup(c)))
+                    AddNested(sub, models, unitName);
             }
         }
+    }
+
+    private void AddNested(JsonObject group, List<ModelComposition> models, string unitName)
+    {
+        var (_, gmx) = Limits(group);
+        foreach (var child in Children(group))
+        {
+            if (BsdDatabase.Str(child, "type") == "model")
+            {
+                var (mn, mx) = Limits(child);
+                var hi = Math.Min(mx ?? gmx ?? 0, gmx ?? int.MaxValue);
+                models.Add(Compose(child, BsdDatabase.Str(child, "name") ?? unitName, mn ?? 0, hi));
+            }
+            else if (IsGroup(child)) AddNested(child, models, unitName);
+        }
+    }
+
+    /// <summary>The "Unit" profile attached directly to the entry (its own profiles or linked shared profiles).</summary>
+    private string? OwnUnitProfileName(JsonObject entry)
+    {
+        var own = BsdDatabase.Arr(entry, "profiles").FirstOrDefault(p => BsdDatabase.Str(p, "typeName") == "Unit");
+        if (own is not null) return BsdDatabase.Str(own, "name");
+        foreach (var l in BsdDatabase.Arr(entry, "infoLinks"))
+            if (BsdDatabase.Str(l, "type") == "profile" && BsdDatabase.Str(l, "targetId") is { } id && db.ById.TryGetValue(id, out var t)
+                && BsdDatabase.Str(t.Node, "typeName") == "Unit")
+                return BsdDatabase.Str(t.Node, "name");
+        return null;
     }
 
     private ModelComposition Compose(JsonObject model, string modelName, int min, int max)
     {
         var statline = _walker.Profiles(model, "Unit").Select(f => BsdDatabase.Str(f.Profile, "name")).FirstOrDefault(n => n is not null);
-        return new ModelComposition
+        var mc = new ModelComposition
         {
             ModelName = modelName.Trim(),
-            StatlineRef = statline,
+            StatlineRef = statline ?? _fallbackStatline,   // variants without a profile of their own use the unit-level one
             Limit = new ModelCountLimits { Min = min, Max = max },
         };
+        _sources[mc] = model;
+        return mc;
     }
 
     /// <summary>Direct child selection entries, groups and linked entries (not descending into groups).</summary>

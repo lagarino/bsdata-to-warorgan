@@ -43,6 +43,7 @@ public sealed class EntryWalker(BsdDatabase db)
     private void Visit(JsonObject node, HashSet<JsonObject> path, Action<JsonObject> action)
     {
         if (!path.Add(node)) return;
+        if (path.Count > 1 && Scope.IsSkippedEntry(BsdDatabase.Str(node, "name"))) { path.Remove(node); return; }
         action(node);
         foreach (var key in new[] { "selectionEntries", "selectionEntryGroups" })
             foreach (var child in BsdDatabase.Arr(node, key))

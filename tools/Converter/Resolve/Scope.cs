@@ -12,4 +12,14 @@ public static class Scope
     public static bool IsExcludedUnitName(string? name) =>
         name is not null && (name.Contains("[Legends]", StringComparison.OrdinalIgnoreCase) ||
                              name.Contains("[Crucible]", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Subtrees below a unit that are not datasheet content: Crusade, enhancements, weapon modifications, warlord
+    /// selection and detachment or Boarding Actions options.
+    /// </summary>
+    public static bool IsSkippedEntry(string? name) =>
+        name is not null && SkippedPrefixes.Any(p => name.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+
+    private static readonly string[] SkippedPrefixes =
+        ["Crusade", "Weapon Modifications", "Warlord", "Enhancements", "Detachment", "Boarding"];
 }

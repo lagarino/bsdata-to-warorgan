@@ -27,6 +27,7 @@ public sealed class UnitExtractor(BsdDatabase db)
         Abilities(entry, unit, armyRuleIds);
         var comp = new CompositionExtractor(db).Extract(entry, warnings);
         unit.UnitComposition.ModelCompositions.AddRange(comp.Models);
+        new WargearExtractor(db).Apply(unit, entry, comp, warnings);
         var pts = new PointsExtractor().Extract(entry, name, comp.MinModels, comp.MaxModels);
         unit.Points.AddRange(pts.Points);
         foreach (var u in pts.Unsupported) warnings.Add($"{name}: points: unsupported {u}");
@@ -125,7 +126,7 @@ public sealed class UnitExtractor(BsdDatabase db)
         var sets = new Dictionary<string, WeaponSet>(StringComparer.Ordinal);
         foreach (var f in _walker.Profiles(entry, "Ranged Weapons", "Melee Weapons"))
         {
-            var ownerName = BsdDatabase.Str(f.Owner, "name") ?? BsdDatabase.Str(f.Profile, "name") ?? "UNKNOWN";
+            var ownerName = (BsdDatabase.Str(f.Owner, "name") ?? BsdDatabase.Str(f.Profile, "name") ?? "UNKNOWN").Trim();
             var profileName = BsdDatabase.Str(f.Profile, "name") ?? ownerName;
             var chars = Characteristics(f.Profile).ToList();
             var keywords = chars.FirstOrDefault(c => c.Id == "Keywords")?.Value;
