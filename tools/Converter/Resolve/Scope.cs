@@ -18,7 +18,7 @@ public static class Scope
     /// selection and detachment or Boarding Actions options.
     /// </summary>
     public static bool IsSkippedEntry(string? name) =>
-        name is not null && SkippedPrefixes.Any(p => name.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+        name is not null && SkippedPrefixes.Any(p => name.StartsWith(p, StringComparison.OrdinalIgnoreCase) && (name.Length == p.Length || !char.IsLetter(name[p.Length])));
 
     private static readonly string[] SkippedPrefixes =
         ["Crusade", "Weapon Modifications", "Warlord", "Enhancements", "Detachment", "Boarding"];

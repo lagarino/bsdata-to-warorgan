@@ -56,7 +56,27 @@ public sealed class UnitExtractor(BsdDatabase db)
             whole.Add(unitName);
             foreach (var m in comp.Sources.Values) if (BsdDatabase.Str(m, "name") is { } n) whole.Add(n.Trim());
         }
+        // A group directly under the unit that holds every model of it ("Crusaders") counts all the unit's models.
+        var modelIds = comp.Sources.Values.Select(m => BsdDatabase.Str(m, "id")).OfType<string>().ToHashSet();
+        foreach (var group in BsdDatabase.Arr(unitEntry, "selectionEntryGroups"))
+            if (modelIds.Count > 0 && BsdDatabase.Str(group, "name") is { } gn && modelIds.IsSubsetOf(ReachableIds(group))) whole.Add(gn.Trim());
         return new PointsExtractor.Context(db.Name, whole, perModel);
+    }
+
+    /// <summary>Ids of everything below a node, following entry links to their targets.</summary>
+    private HashSet<string> ReachableIds(JsonObject node)
+    {
+        var ids = new HashSet<string>();
+        void Visit(JsonObject n)
+        {
+            if (BsdDatabase.Str(n, "id") is { } id && !ids.Add(id)) return;
+            foreach (var key in new[] { "selectionEntries", "selectionEntryGroups" })
+                foreach (var c in BsdDatabase.Arr(n, key)) Visit(c);
+            foreach (var l in BsdDatabase.Arr(n, "entryLinks"))
+                if (BsdDatabase.Str(l, "targetId") is { } t && db.ById.TryGetValue(t, out var target)) Visit(target.Node);
+        }
+        Visit(node);
+        return ids;
     }
 
     /// <summary>Rule ids linked by the roster's units, with the number of units linking each.</summary>
@@ -125,35 +145,7 @@ public sealed class UnitExtractor(BsdDatabase db)
     /// </summary>
     private static bool IsHiddenByDefault(JsonObject link) =>
         BsdDatabase.Arr(link, "modifiers").Any(m => BsdDatabase.Str(m, "field") == "hidden" && m["value"]?.ToString() == "true"
-            && (m["conditions"] is not null || m["conditionGroups"] is not null) && NothingSelectedHolds(m) == true);
-
-    /// <summary>Whether the conditions hold when nothing is selected; null when they cannot be told.</summary>
-    private static bool? NothingSelectedHolds(JsonObject node)
-    {
-        var results = new List<bool?>();
-        foreach (var c in BsdDatabase.Arr(node, "conditions"))
-        {
-            var value = c["value"] is JsonValue v && v.TryGetValue<double>(out var d) ? d : (double?)null;
-            var field = BsdDatabase.Str(c, "field");
-            if (field is not ("selections" or "associations") || value is null) { results.Add(null); continue; }
-            results.Add(BsdDatabase.Str(c, "type") switch
-            {
-                "lessThan" => 0 < value,
-                "atMost" => 0 <= value,
-                "equalTo" => value == 0,
-                "greaterThan" => 0 > value,
-                "atLeast" => 0 >= value,
-                "notEqualTo" => value != 0,
-                "notInstanceOf" => true,
-                "instanceOf" => false,
-                _ => null,
-            });
-        }
-        foreach (var g in BsdDatabase.Arr(node, "conditionGroups")) results.Add(NothingSelectedHolds(g));
-        if (results.Count == 0) return null;
-        if (BsdDatabase.Str(node, "type") == "or") return results.Any(r => r == true) ? true : results.Any(r => r is null) ? null : false;
-        return results.Any(r => r == false) ? false : results.Any(r => r is null) ? null : true;
-    }
+            && (m["conditions"] is not null || m["conditionGroups"] is not null) && Visibility.HoldsWithNothingSelected(m, null) == true);
 
     private static string? ProfileText(JsonObject profile) =>
         BsdDatabase.Arr(profile, "characteristics").Select(c => BsdDatabase.Str(c, "$text")).FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));

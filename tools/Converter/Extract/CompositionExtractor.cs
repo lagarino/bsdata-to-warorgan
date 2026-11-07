@@ -120,6 +120,13 @@ public sealed class CompositionExtractor(BsdDatabase db)
                         AddNested(sub, models, unitName, child, bmn ?? 0, bmx);
                     continue;
                 }
+                // A group that holds some models itself and sub-groups of models that each have a size of their own (a leader model, then
+                // "5 to 11 initiates", then "4 to 8 neophytes") is a list of parts: every part is read on its own.
+                if (Children(child).Any(c => IsGroup(c) && Children(c).Any(x => BsdDatabase.Str(x, "type") == "model") && Limits(c) is { Min: not null, Max: not null }))
+                {
+                    Process(child, models, ref min, ref max, unitName);
+                    continue;
+                }
                 int sumMin = 0, sumMax = 0;
                 foreach (var model in inner)
                 {

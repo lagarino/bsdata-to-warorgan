@@ -57,7 +57,7 @@ public static class DatasetBuilder
     {
         var rules = SourceRules(db);
         var rosters = new List<FactionRoster>();
-        var allyUnits = new List<(string Roster, Dictionary<string, List<string>> ByFaction)>();
+        var allyUnits = new List<(string Roster, Dictionary<string, List<string>> ByFaction, string? Parent)>();
         var factions = new List<FactionInfo>();
 
         foreach (var (file, root) in SelectCatalogues(db, settings.Catalogues))
@@ -80,7 +80,7 @@ public static class DatasetBuilder
                     roster.ArmyRules.Add(new UnitInfoSection { Title = BsdDatabase.Str(r.Node, "name")!.Trim(), Text = text.Trim() });
             foreach (var w in warnings) report.Warnings.Add($"{roster.Name}: {w}");
             rosters.Add(roster);
-            allyUnits.Add((roster.Name, extracted.ImportedByFaction ?? []));
+            allyUnits.Add((roster.Name, extracted.ImportedByFaction ?? [], extracted.ParentKeyword));
             var factionInfo = FactionFor(catalogueName, roster);
             // A datasheet with no faction category (some characters) belongs to the roster it is listed in; the builder needs a keyword.
             foreach (var unit in roster.Units.Where(u => u.FactionKeywords.Count == 0))
@@ -120,9 +120,9 @@ public static class DatasetBuilder
     /// A faction that imports units of another faction gets that faction as an ally, when the ally's roster is part of the dataset.
     /// The units it may take are listed in an include rule when they are not the whole roster of the ally.
     /// </summary>
-    private static void AddAllies(List<FactionInfo> factions, List<FactionRoster> rosters, List<(string Roster, Dictionary<string, List<string>> ByFaction)> imports, BuildReport report)
+    private static void AddAllies(List<FactionInfo> factions, List<FactionRoster> rosters, List<(string Roster, Dictionary<string, List<string>> ByFaction, string? Parent)> imports, BuildReport report)
     {
-        foreach (var (rosterName, byFaction) in imports)
+        foreach (var (rosterName, byFaction, parentKeyword) in imports)
         {
             var faction = factions.First(f => f.Name == rosterName);
             // A unit the catalogue links itself but that belongs to another faction of the dataset (only that faction's keyword) is an allied unit too.
@@ -148,7 +148,8 @@ public static class DatasetBuilder
                 var allyRoster = rosters.First(r => r.Name == allyFaction.Name);
                 var allowed = ids.Where(id => allyRoster.Units.Any(u => u.Id == id)).Distinct().ToList();
                 if (allowed.Count == 0) continue;
-                var ally = new FactionAlly { FactionKeyword = keyword };
+                // The parent faction of a sub-faction (a chapter of the parent army) is part of its own roster.
+                var ally = new FactionAlly { FactionKeyword = keyword, IsIncludedInPrimaryRoster = keyword == parentKeyword };
                 if (allowed.Count < allyRoster.Units.Count)
                     ally.UnitIncludeRules = [new UnitIncludeRule { AffectedUnitsFilter = allowed }];
                 (faction.Allies ??= []).Add(ally);
@@ -212,13 +213,13 @@ public static class DatasetBuilder
     /// <summary>"Xenos - Orks" becomes "Orks".</summary>
     public static string DisplayName(string catalogueName)
     {
-        var i = catalogueName.IndexOf(" - ", StringComparison.Ordinal);
+        var i = catalogueName.LastIndexOf(" - ", StringComparison.Ordinal);
         return (i >= 0 ? catalogueName[(i + 3)..] : catalogueName).Trim();
     }
 
     private static FactionInfo FactionFor(string catalogueName, FactionRoster roster)
     {
-        var i = catalogueName.IndexOf(" - ", StringComparison.Ordinal);
+        var i = catalogueName.LastIndexOf(" - ", StringComparison.Ordinal);
         var keyword = roster.Units.SelectMany(u => u.FactionKeywords).Contains(roster.Name)
             ? roster.Name
             : roster.Units.SelectMany(u => u.FactionKeywords).GroupBy(k => k).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault() ?? roster.Name;

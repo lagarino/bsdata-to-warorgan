@@ -175,5 +175,11 @@ What is still open:
 - **Leaders in the four legion catalogues of the chaos set.** Their own files carry no leader associations, so those factions' characters
   have no leader information (they cannot be attached to units). The parent catalogue of that set does have them. Not converted.
 - **Datasheets without a faction category** (some characters) get the keyword of the roster they are listed in.
+- **Sub-factions** [closed for the army families of the first target]. A catalogue whose own datasheets carry a parent faction's keyword
+  next to its own (a chapter of a parent army), or that is mostly made of the parent's imported units, lists the parent as an ally
+  with `IsIncludedInPrimaryRoster` (one per faction) and an include rule naming the units it may take. Units the primary-catalogue
+  rules hide for that catalogue (a chapter with its own version of a datasheet) are left out, and when a chapter and its parent list a
+  datasheet of the same name, the chapter's own copy is used. The parent's detachments are added to the chapter's.
+- **Prices that depend on the count of a model group** (for example "3-6 headtakers" plus an optional wolf pack): reported, base price kept.
 - **Other families.** The large parent faction with its sub-factions, the faction families that include other factions, and the
   library-only catalogues are not converted.

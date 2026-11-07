@@ -23,7 +23,7 @@ public sealed class PointsExtractor
 
     /// <summary>Entries of campaign or alternative modes: never active in a standard game.</summary>
     private static bool IsOutOfScopeMode(string? name) =>
-        name is not null && (name.Contains("Crusade", StringComparison.OrdinalIgnoreCase) || name.Contains("Boarding Actions", StringComparison.OrdinalIgnoreCase));
+        name is not null && (System.Text.RegularExpressions.Regex.IsMatch(name, @"\bCrusade\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase) || name.Contains("Boarding Actions", StringComparison.OrdinalIgnoreCase));
 
     private static readonly System.Text.RegularExpressions.Regex SizeUpgrade = new(@"^\s*(\d+)\s+models?\s*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 

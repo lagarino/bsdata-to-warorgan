@@ -29,7 +29,7 @@ public sealed class DetachmentExtractor(BsdDatabase db)
     }
 
     public List<Detachment> Extract(string catalogueFile, IReadOnlyList<ResolvedUnit> resolved, IReadOnlyList<Unit> units, List<string> warnings,
-        IReadOnlyList<LeaderExtractor.GatedAttachment>? gatedAttachments = null)
+        IReadOnlyList<LeaderExtractor.GatedAttachment>? gatedAttachments = null, IReadOnlySet<string>? parentFiles = null)
     {
         var root = db.Roots[catalogueFile];
         var primaryId = BsdDatabase.Str(root, "id");
@@ -38,7 +38,7 @@ public sealed class DetachmentExtractor(BsdDatabase db)
         // Only libraries this roster's own units come from: an allied library (imported units) belongs to the other army.
         var sources = new List<JsonObject> { root };
         foreach (var owner in resolved.Select(r => r.OwnerFile).Distinct().Where(f => f != catalogueFile))
-            if (db.Roots.TryGetValue(owner, out var lib) && !Scope.IsExcludedFile(owner) && lib["library"] is JsonValue lv && lv.TryGetValue<bool>(out var isLib) && isLib)
+            if (db.Roots.TryGetValue(owner, out var lib) && !Scope.IsExcludedFile(owner) && (parentFiles?.Contains(owner) == true || lib["library"] is JsonValue lv && lv.TryGetValue<bool>(out var isLib) && isLib))
                 sources.Add(lib);
         var detachments = new List<(JsonObject Entry, Detachment Model)>();
         var allDetachmentIds = new HashSet<string>();

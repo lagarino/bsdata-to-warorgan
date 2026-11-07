@@ -5,7 +5,7 @@ using WarOrganConverter.Resolve;
 namespace WarOrganConverter.Extract;
 
 public sealed record RosterResult(IReadOnlyList<ResolvedUnit> Resolved, List<Unit> Units, HashSet<string> ArmyRules, List<WarOrgan.Model.Faction.Detachment> Detachments,
-    Dictionary<string, List<string>>? ImportedByFaction = null);
+    Dictionary<string, List<string>>? ImportedByFaction = null, string? ParentKeyword = null);
 
 /// <summary>Everything that is extracted for one catalogue's roster, in the order the stages depend on each other.</summary>
 public static class RosterExtractor
@@ -21,12 +21,22 @@ public static class RosterExtractor
         var all = new RosterResolver(db).Resolve(catalogueFile);
         // The faction's own keyword is the one named like the catalogue ("Xenos - Orks" and "Faction: Orks"); failing that, the most common one.
         var catalogueName = BsdDatabase.Str(db.Roots[catalogueFile], "name") ?? "";
-        var shortName = (catalogueName.IndexOf(" - ", StringComparison.Ordinal) is var i and >= 0 ? catalogueName[(i + 3)..] : catalogueName).Trim();
+        var shortName = (catalogueName.LastIndexOf(" - ", StringComparison.Ordinal) is var i and >= 0 ? catalogueName[(i + 3)..] : catalogueName).Trim();
         var ownKeyword = all.SelectMany(r => FactionKeywords(db, r.Entry)).FirstOrDefault(k => k.Equals(shortName, StringComparison.OrdinalIgnoreCase))
             ?? LibraryKeyword(db, all, shortName)
             ?? all.Where(r => !r.Imported).SelectMany(r => FactionKeywords(db, r.Entry)).GroupBy(k => k)
                 .OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
-        var resolved = all.Where(r => !r.Imported || includeImported || (ownKeyword is not null && FactionKeywords(db, r.Entry).Contains(ownKeyword))).ToList();
+        // A sub-faction (a chapter of a parent army): most of its own datasheets carry another faction's keyword next to its own, and the
+        // catalogue imports the parent's units. The parent's units are then part of its roster.
+        var own = all.Where(r => !r.Imported).ToList();
+        var parentKeyword = own.SelectMany(r => FactionKeywords(db, r.Entry)).Where(k => k != ownKeyword).GroupBy(k => k)
+            .Where(g => g.Count() * 2 >= own.Count && all.Any(r => r.Imported && FactionKeywords(db, r.Entry).Contains(g.Key)))
+            .OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault()
+            // or most of the roster is another faction's units (a sub-faction with few datasheets of its own)
+            ?? all.Where(r => r.Imported).SelectMany(r => FactionKeywords(db, r.Entry).Take(1)).Where(k => k != ownKeyword).GroupBy(k => k)
+                .Where(g => g.Count() * 2 >= all.Count).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
+        var resolved = all.Where(r => !r.Imported || includeImported || (ownKeyword is not null && FactionKeywords(db, r.Entry).Contains(ownKeyword))
+                                      || (parentKeyword is not null && FactionKeywords(db, r.Entry).Contains(parentKeyword))).ToList();
         var imported = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         foreach (var r in all.Except(resolved))
             if (FactionKeywords(db, r.Entry).FirstOrDefault() is { } keyword)
@@ -38,8 +48,9 @@ public static class RosterExtractor
         var extractor = new UnitExtractor(db);
         var units = resolved.Select(r => extractor.Extract(r, armyRules, warnings)).ToList();
         var gated = new LeaderExtractor(db).Apply(resolved, units, warnings);
-        var detachments = new DetachmentExtractor(db).Extract(catalogueFile, resolved, units, warnings, gated);
-        return new RosterResult(resolved, units, armyRules, detachments, imported);
+        var detachments = new DetachmentExtractor(db).Extract(catalogueFile, resolved, units, warnings, gated,
+            parentKeyword is null ? null : resolved.Where(r => r.Imported && FactionKeywords(db, r.Entry).Contains(parentKeyword)).Select(r => r.OwnerFile).ToHashSet());
+        return new RosterResult(resolved, units, armyRules, detachments, imported, parentKeyword);
     }
 
     private static List<string> FactionKeywords(BsdDatabase db, System.Text.Json.Nodes.JsonObject entry) =>

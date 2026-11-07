@@ -33,7 +33,9 @@ public static class VariantMerger
 
             // The group's total limit applies to every variant together.
             var min = wholeGroup ? info.GroupMin ?? members.Sum(m => m.Limit!.Min) : members.Sum(m => m.Limit!.Min);
-            var max = wholeGroup ? info.GroupMax ?? members.Sum(m => m.Limit!.Max) : Math.Min(members.Sum(m => m.Limit!.Max), info.GroupMax ?? int.MaxValue);
+            // Other models of the same group (a sergeant next to the troopers) use up part of the group's total.
+            var othersMin = comp.Models.Where(m => !members.Contains(m) && comp.Members.TryGetValue(m, out var i) && ReferenceEquals(i.Group, info.Group) && i.SubGroup is null).Sum(m => m.Limit!.Min);
+            var max = wholeGroup ? info.GroupMax ?? members.Sum(m => m.Limit!.Max) : Math.Min(members.Sum(m => m.Limit!.Max), (info.GroupMax ?? int.MaxValue) - Math.Min(othersMin, info.GroupMax ?? 0));
             var baseGear = baseModel.Wargear.FirstOrDefault() ?? new ModelWargear();
             if (baseModel.Wargear.Count == 0) baseModel.Wargear.Add(baseGear);
 
