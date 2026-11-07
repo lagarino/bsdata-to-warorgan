@@ -8,7 +8,7 @@ A command-line tool that converts [BattleScribe](https://battlescribe.net/) data
 tool on your own computer, against your own copy of a BSData repository, and the dataset it creates stays on your
 computer.
 
-> **Status: early development; the first release (0.1) is prepared but not published.** The tool converts BSData catalogues for one tabletop wargame (the first
+> **Status: early development; release 0.1.0 is published on the Releases page (the repo is private, so collaborators only).** The tool converts BSData catalogues for one tabletop wargame (the first
 > target of the project): units, statlines, weapons, wargear, points, army rules, leaders, detachments, enhancements and
 > detachment effects. Allies are converted when both catalogues are in the same run; stratagems are not converted yet. Generated datasets
 > have been imported into WarOrgan and used to build army lists. See [What works today](#3-what-works-today).

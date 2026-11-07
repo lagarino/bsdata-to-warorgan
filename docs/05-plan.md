@@ -113,8 +113,8 @@ Every converter phase lands together with its tests, and a phase is not done unt
 
 ## Phase 3 - Releases (binary distribution)
 
-**Status:** prepared. `THIRD-PARTY-NOTICES.md`, the packaging target that removes the sample dataset, `--version`, `ci.yml` and `release.yml` are in
-the repo; the first tag (`v0.1.0`) has not been pushed.
+**Status:** v0.1.0 published (after the pre-release v0.1.0-rc1). `THIRD-PARTY-NOTICES.md`, the packaging target that removes the sample dataset, `--version`, `ci.yml` and `release.yml` are in
+the repo.
 
 Publishing prebuilt executables as GitHub Releases (for example `v0.1.0`) is feasible:
 
