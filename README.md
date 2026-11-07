@@ -17,11 +17,12 @@ not meant to be committed or published.
 Early development; there is no release yet. What exists:
 
 - A .NET 10 converter skeleton in [`tools/Converter`](tools/Converter): BSData loader, scope filter, roster resolution,
-  and extraction of statlines, weapons, keywords and abilities (`survey` and `extract` commands).
+  and extraction of statlines, weapons, keywords, abilities, model compositions and points tiers (`survey` and
+  `extract` commands).
 - Written analysis of the BSData structure, the WarOrgan model and the mapping between them, plus the gaps and the plan
   (see below).
 
-Not yet: model compositions, points, wargear, leaders, detachments, dataset output and validation.
+Not yet: wargear, leaders, detachments, dataset output and validation.
 
 ## Design
 

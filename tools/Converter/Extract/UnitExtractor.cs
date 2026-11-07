@@ -25,6 +25,11 @@ public sealed class UnitExtractor(BsdDatabase db)
         unit.Weapons.AddRange(Weapons(entry));
         Keywords(entry, unit);
         Abilities(entry, unit, armyRuleIds);
+        var comp = new CompositionExtractor(db).Extract(entry, warnings);
+        unit.UnitComposition.ModelCompositions.AddRange(comp.Models);
+        var pts = new PointsExtractor().Extract(entry, name, comp.MinModels, comp.MaxModels);
+        unit.Points.AddRange(pts.Points);
+        foreach (var u in pts.Unsupported) warnings.Add($"{name}: points: unsupported {u}");
         if (unit.StatLines.Count == 0) warnings.Add($"{name}: no unit profile found");
         return unit;
     }

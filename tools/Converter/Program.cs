@@ -49,6 +49,9 @@ foreach (var (file, root) in db.Roots.Where(kv => BsdDatabase.Str(kv.Value, "typ
         Console.WriteLine($"  core abilities used: {string.Join("; ", extracted.SelectMany(u => u.CoreAbilities).Distinct().Order())}");
         Console.WriteLine($"{name}: {extracted.Count} units, {extracted.Sum(u => u.StatLines.Count)} statlines, {extracted.Sum(u => u.Weapons.Sum(w => w.Weapons.Count))} weapon profiles");
         foreach (var w in warnings) Console.WriteLine("  warning: " + w);
+        if (argsList.Contains("--brief"))
+            foreach (var u in extracted)
+                Console.WriteLine($"  {u.DisplayName,-34} models [{string.Join(", ", u.UnitComposition.ModelCompositions.Select(m => $"{m.ModelName} {m.Limit?.Min}-{m.Limit?.Max}"))}] pts [{string.Join(", ", u.Points.Select(p => $"{(p.UnitCount is null ? "" : "u<=" + p.UnitCount + " ")}m<={p.ModelCount}:{p.Cost}"))}]");
         var sample = Opt("--unit");
         var show = extracted.FirstOrDefault(u => string.Equals(u.DisplayName, sample, StringComparison.OrdinalIgnoreCase));
         if (show is not null) Console.WriteLine(JsonSerializer.Serialize(show, new JsonSerializerOptions { WriteIndented = true }));
