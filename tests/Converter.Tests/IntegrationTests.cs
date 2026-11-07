@@ -115,6 +115,21 @@ public class IntegrationTests
         Assert.DoesNotContain(warnings, w => w.Contains("points: unsupported") && !w.Contains("Convergence of Dominion"));
     }
 
+    [IntegrationFact]
+    public void The_orks_and_necrons_dataset_passes_the_builders_validation_and_is_written()
+    {
+        var db = Database.Value;
+        var settings = new WarOrganConverter.Emit.BuildSettings("Integration Test", new Version(1, 0, 0, 0),
+            Path.Combine(Path.GetTempPath(), "bsdata-to-warorgan-tests", Guid.NewGuid().ToString("N")), ["Orks", "Necrons"]);
+        var report = new WarOrganConverter.Emit.BuildReport();
+        var model = WarOrganConverter.Emit.DatasetBuilder.Build(db, settings, report);
+        WarOrganConverter.Emit.DatasetBuilder.Validate(model);            // throws on any validation error
+        var zip = WarOrganConverter.Emit.DatasetBuilder.Publish(model, settings, "the integration test");
+        Assert.True(new FileInfo(zip).Length > 10_000);
+        Assert.Equal(2, report.Rosters);
+        Assert.DoesNotContain(report.Warnings, w => w.Contains("no rule text found"));
+    }
+
     [IntegrationTheory]
     [MemberData(nameof(Factions))]
     public void Ids_and_names_are_trimmed_as_the_builder_requires(string file)

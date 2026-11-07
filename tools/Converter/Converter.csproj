@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <ProjectReference Include="$(WarOrganDataPath)\WarOrgan.Data.Model\WarOrgan.Data.Model.csproj" />
+    <!-- The builder project provides the validation and the zip writer the app's datasets are made with. -->
+    <ProjectReference Include="$(WarOrganDataPath)\WarOrgan.Data.BuildDataset\WarOrgan.Data.BuildDataset.csproj" />
   </ItemGroup>
 
 </Project>

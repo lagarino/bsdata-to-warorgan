@@ -17,12 +17,14 @@ not meant to be committed or published.
 Early development; there is no release yet. What exists:
 
 - A .NET 10 converter skeleton in [`tools/Converter`](tools/Converter): BSData loader, scope filter, roster resolution,
-  and extraction of statlines, weapons, keywords, abilities, model compositions and points tiers (`survey` and
-  `extract` commands).
+  extraction of statlines, weapons, keywords, abilities, model compositions, points tiers and wargear, and dataset
+  output validated with the WarOrgan builder (`survey`, `extract` and `convert` commands). A dataset for the Orks and
+  Necrons catalogues converts, validates with 0 errors and 0 warnings, and is written as a zip; it has not been
+  imported into the app yet.
 - Written analysis of the BSData structure, the WarOrgan model and the mapping between them, plus the gaps and the plan
   (see below).
 
-Not yet: wargear, leaders, detachments, dataset output and validation.
+Not yet: leaders, detachments and enhancements, allies, stratagems, the other factions, and the settings file and cache commands.
 
 ## Design
 
@@ -65,7 +67,12 @@ cd tools/Converter
 dotnet build
 dotnet run -- survey  --bsdata <path to BSData checkout>
 dotnet run -- extract --bsdata <path to BSData checkout> --faction "<catalogue name>"
+dotnet run -- convert --bsdata <path to BSData checkout> --output <folder> --dataset-id "<id>" --faction "<name>"
 ```
+
+`convert` writes `<id>.zip` (plus a README) into the output folder and prints the builder's validation result and a list
+of warnings. `--dataset-id` has no default (3-30 characters: letters, digits, space, `- _ ( ) [ ]`); `--faction` can be
+repeated and takes a catalogue name, its short name (`Orks`) or its file name, and converts everything when omitted.
 
 ## Tests
 

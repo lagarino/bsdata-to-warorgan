@@ -1,10 +1,16 @@
 using System.Text.Json;
+using WarOrgan.Data.BuildDataset.Utils;
+using WarOrgan.Model.DataSet;
+using WarOrganConverter.Emit;
 using WarOrganConverter.Extract;
 using WarOrganConverter.Load;
 using WarOrganConverter.Resolve;
 
-// Usage: warorgan-converter survey|extract --bsdata <folder> [--faction <catalogue name>]...
-// (convert and cache commands follow in later phases, see docs/05-plan.md)
+// Usage:
+//   warorgan-converter survey  --bsdata <folder> [--faction <catalogue name>]...
+//   warorgan-converter extract --bsdata <folder> [--faction <catalogue name>]... [--brief] [--unit <name>]
+//   warorgan-converter convert --bsdata <folder> --output <folder> --dataset-id <id> [--dataset-version 1.0.0.0] [--faction <name>]...
+// (cache commands follow in later phases, see docs/05-plan.md)
 var argsList = args.ToList();
 string? Opt(string name)
 {
@@ -18,9 +24,10 @@ IEnumerable<string> Opts(string name)
 }
 
 var command = argsList.FirstOrDefault() ?? "help";
-if (command is not ("survey" or "extract"))
+if (command is not ("survey" or "extract" or "convert"))
 {
-    Console.WriteLine("Usage: warorgan-converter survey|extract --bsdata <folder> [--faction <catalogue name>]...");
+    Console.WriteLine("Usage: warorgan-converter survey|extract|convert --bsdata <folder> [--faction <catalogue name>]...");
+    Console.WriteLine("  convert also needs --output <folder> --dataset-id <id> [--dataset-version 1.0.0.0]");
     return command == "help" ? 0 : 2;
 }
 
@@ -31,6 +38,40 @@ if (bsdata is null)
     return 2;
 }
 var db = BsdDatabase.Load(bsdata);
+
+if (command == "convert")
+{
+    var id = Opt("--dataset-id");
+    var output = Opt("--output");
+    if (id is null || output is null || !DataSetValidation.IsValidDataSetId(id))
+    {
+        Console.Error.WriteLine("convert needs --output <folder> and --dataset-id <id> (3-30 characters: letters, digits, space, - _ ( ) [ ]).");
+        return 2;
+    }
+    if (!Version.TryParse(Opt("--dataset-version") ?? "1.0.0.0", out var version))
+    {
+        Console.Error.WriteLine("--dataset-version must look like 1.0.0.0");
+        return 2;
+    }
+    var settings = new BuildSettings(id, version, output, Opts("--faction").ToList());
+    var report = new BuildReport();
+    try
+    {
+        var model = DatasetBuilder.Build(db, settings, report);
+        DatasetBuilder.Validate(model);
+        report.ZipPath = DatasetBuilder.Publish(model, settings, $"the BSData catalogues in {Path.GetFullPath(bsdata)}");
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Conversion failed: {ex.Message}");
+    }
+    Console.WriteLine($"Converted {report.Units} units in {report.Rosters} roster(s).");
+    foreach (var w in report.Warnings) Console.WriteLine("  warning: " + w);
+    LoggingBuffer.Print(waitForInput: false);
+    if (report.ZipPath is not null) Console.WriteLine($"{Environment.NewLine}Dataset written: {report.ZipPath}");
+    return report.ZipPath is not null && LoggingBuffer.ErrorCount == 0 ? 0 : 1;
+}
+
 var resolver = new RosterResolver(db);
 var factions = Opts("--faction").ToList();
 foreach (var (file, root) in db.Roots.Where(kv => BsdDatabase.Str(kv.Value, "type") != "gameSystem" && !Scope.IsExcludedFile(kv.Key)))
