@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using WarOrgan.Model.Effects;
 using WarOrgan.Model.Faction;
 using WarOrgan.Model.Unit;
 using WarOrganConverter.Load;
@@ -27,7 +28,8 @@ public sealed class DetachmentExtractor(BsdDatabase db)
         public Eligibility() : this([], [], []) { }
     }
 
-    public List<Detachment> Extract(string catalogueFile, IReadOnlyList<ResolvedUnit> resolved, IReadOnlyList<Unit> units, List<string> warnings)
+    public List<Detachment> Extract(string catalogueFile, IReadOnlyList<ResolvedUnit> resolved, IReadOnlyList<Unit> units, List<string> warnings,
+        IReadOnlyList<LeaderExtractor.GatedAttachment>? gatedAttachments = null)
     {
         var root = db.Roots[catalogueFile];
         var detachments = new List<(JsonObject Entry, Detachment Model)>();
@@ -91,6 +93,7 @@ public sealed class DetachmentExtractor(BsdDatabase db)
                     }
                 }
 
+        GrantGatedAttachments(detachments.Select(d => d.Model).ToList(), units, gatedAttachments ?? [], warnings);
         new DetachmentEffectExtractor(db).Apply(resolved, units, detachments, warnings);
 
         MarkUnitsWithoutEnhancements(resolved, units, containerIds);
@@ -266,6 +269,32 @@ public sealed class DetachmentExtractor(BsdDatabase db)
             else foreach (var c in oneOf) AddUnique(e.RequiredOneOfKeywords, Name(c));
         }
         foreach (var cid in elig.Excluded.Distinct()) AddUnique(e.ExcludedKeywords, Name(cid));
+    }
+
+    /// <summary>
+    /// "May lead unit X only with option Y" (Y an enhancement): the enhancement adds X to the bearer's led units. The addition goes
+    /// to every bearer of Y, even one that would not be gated on its own datasheet.
+    /// </summary>
+    private static void GrantGatedAttachments(List<Detachment> detachments, IReadOnlyList<Unit> units, IReadOnlyList<LeaderExtractor.GatedAttachment> gated, List<string> warnings)
+    {
+        static string Key(string s) => s.Replace('’', '\'').Trim().ToLowerInvariant();
+        var enhancements = detachments.SelectMany(d => d.Enhancements).Distinct().ToList();
+        foreach (var group in gated.GroupBy(g => Key(g.Option)))
+        {
+            var ids = group.SelectMany(g => g.UnitIds).Distinct().ToList();
+            var targets = enhancements.Where(e => Key(e.Name) == group.Key).ToList();
+            if (targets.Count == 0)
+            {
+                var leaders = group.Select(g => units[g.LeaderIndex].DisplayName).Distinct();
+                warnings.Add($"{string.Join(", ", leaders)}: may lead {string.Join(", ", ids)} only with '{group.First().Option}', which is not a converted enhancement; left out");
+                continue;
+            }
+            foreach (var e in targets)
+                (e.DatasheetAdjustments ??= []).Add(new DatasheetAdjustment
+                {
+                    Target = DatasheetFeature.LedUnitNames, Type = StatAdjustmentType.Add, Scope = StatAdjustmentScope.Model, Values = [.. ids],
+                });
+        }
     }
 
     // ---- units ----

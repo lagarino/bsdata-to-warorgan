@@ -1,3 +1,4 @@
+using WarOrgan.Model.Effects;
 using WarOrgan.Model.Faction;
 using WarOrgan.Model.Unit;
 using WarOrganConverter.Extract;
@@ -36,6 +37,20 @@ public class DetachmentTests
               "entryLinks": [ { "id": "lk", "targetId": "g-enh", "type": "selectionEntryGroup" } ] },
             { "id": "u-grunt", "name": "Grunt Chief", "type": "model", "categoryLinks": [ { "targetId": "c-char" }, { "targetId": "c-fac" } ],
               "profiles": [ { "id": "p4", "name": "Grunt Chief", "typeName": "Unit", "characteristics": [ { "name": "M", "$text": "6\"" } ] } ] },
+            { "id": "u-gate", "name": "Gate Boss", "type": "model", "categoryLinks": [ { "targetId": "c-char" }, { "targetId": "c-fac" } ],
+              "profiles": [ { "id": "p5", "name": "Gate Boss", "typeName": "Unit", "characteristics": [ { "name": "M", "$text": "6\"" } ] } ],
+              "associations": [ { "name": "x", "label": "Leader", "action": "group", "min": 0, "max": 1, "conditionGroups": [ { "type": "or",
+                "conditions": [ { "type": "instanceOf", "childId": "c-boyz", "field": "selections", "scope": "self", "value": 1 } ],
+                "conditionGroups": [ { "type": "and", "conditions": [
+                  { "type": "atLeast", "childId": "e-hat", "field": "selections", "scope": "self", "value": 1 },
+                  { "type": "instanceOf", "childId": "c-nobz", "field": "selections", "scope": "self", "value": 1 } ] } ] } ] } ] },
+            { "id": "u-gate2", "name": "Gate Boss Two", "type": "model", "categoryLinks": [ { "targetId": "c-char" }, { "targetId": "c-fac" } ],
+              "profiles": [ { "id": "p6", "name": "Gate Boss Two", "typeName": "Unit", "characteristics": [ { "name": "M", "$text": "6\"" } ] } ],
+              "associations": [ { "name": "x", "label": "Leader", "action": "group", "min": 0, "max": 1, "conditionGroups": [ { "type": "or",
+                "conditions": [ { "type": "instanceOf", "childId": "c-boyz", "field": "selections", "scope": "self", "value": 1 } ],
+                "conditionGroups": [ { "type": "and", "conditions": [
+                  { "type": "atLeast", "childId": "e-nowhere", "field": "selections", "scope": "self", "value": 1 },
+                  { "type": "instanceOf", "childId": "c-nobz", "field": "selections", "scope": "self", "value": 1 } ] } ] } ] } ] },
             { "id": "Detachment", "name": "Detachment", "type": "upgrade",
               "selectionEntries": [
                 { "id": "d-a", "name": "Alpha Force", "type": "upgrade",
@@ -69,7 +84,8 @@ public class DetachmentTests
           ],
           "entryLinks": [
             { "id": "r1", "targetId": "u-nobz", "type": "selectionEntry" }, { "id": "r2", "targetId": "u-boyz", "type": "selectionEntry" },
-            { "id": "r3", "targetId": "u-boss", "type": "selectionEntry" }, { "id": "r4", "targetId": "u-grunt", "type": "selectionEntry" } ] } }
+            { "id": "r3", "targetId": "u-boss", "type": "selectionEntry" }, { "id": "r4", "targetId": "u-grunt", "type": "selectionEntry" },
+            { "id": "r5", "targetId": "u-gate", "type": "selectionEntry" }, { "id": "r6", "targetId": "u-gate2", "type": "selectionEntry" } ] } }
         """;
 
     private static (RosterResult Roster, List<string> Warnings) Run()
@@ -159,6 +175,26 @@ public class DetachmentTests
 
     private static void Flags(RosterResult r, string name, UnitFlags expected) =>
         Assert.Equal(expected, r.Units.Single(u => u.DisplayName == name).Flags);
+
+    [Fact]
+    public void A_leader_gated_by_an_enhancement_gets_the_unit_through_that_enhancement()
+    {
+        var (r, _) = Run();
+        var leader = r.Units.Single(u => u.DisplayName == "Gate Boss").LeaderInfo!;
+        Assert.Equal(["BOYZ"], leader.UnitNames);                              // without the enhancement it may only lead Boyz
+        var hat = Det(r, "Alpha Force").Enhancements.Single();
+        var adjustment = Assert.Single(hat.DatasheetAdjustments!);
+        Assert.Equal(DatasheetFeature.LedUnitNames, adjustment.Target);
+        Assert.Equal(StatAdjustmentType.Add, adjustment.Type);
+        Assert.Equal(["NOBZ"], adjustment.Values);
+    }
+
+    [Fact]
+    public void A_leader_gated_by_something_that_is_not_an_enhancement_is_reported()
+    {
+        var (_, warnings) = Run();
+        Assert.Contains(warnings, w => w.Contains("Gate Boss Two") && w.Contains("not a converted enhancement"));
+    }
 
     [Fact]
     public void Dispositions_in_the_data_never_leak_into_unit_keywords_as_tags()

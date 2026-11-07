@@ -15,8 +15,8 @@ public static class RosterExtractor
         var armyRules = UnitExtractor.FindArmyRules(resolved);
         var extractor = new UnitExtractor(db);
         var units = resolved.Select(r => extractor.Extract(r, armyRules, warnings)).ToList();
-        new LeaderExtractor(db).Apply(resolved, units, warnings);
-        var detachments = new DetachmentExtractor(db).Extract(catalogueFile, resolved, units, warnings);
+        var gated = new LeaderExtractor(db).Apply(resolved, units, warnings);
+        var detachments = new DetachmentExtractor(db).Extract(catalogueFile, resolved, units, warnings, gated);
         return new RosterResult(resolved, units, armyRules, detachments);
     }
 }

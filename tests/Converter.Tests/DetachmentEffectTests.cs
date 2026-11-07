@@ -21,7 +21,7 @@ public class DetachmentEffectTests
     private static string Mod(string field, string type, string value, string condition) =>
         $$"""{ "field": "{{field}}", "type": "{{type}}", "value": {{value}}, "conditions": [ {{condition}} ] }""";
 
-    private static string Catalogue(string unitModifiers, string unitModifierGroups = "") => $$"""
+    private static string Catalogue(string unitModifiers, string unitModifierGroups = "", string extraEntries = "") => $$"""
         { "catalogue": { "id": "c", "name": "Test - Orks",
           "categoryEntries": [ { "id": "c-bl", "name": "Battleline" }, { "id": "c-fac", "name": "Faction: Orks" } ],
           "sharedProfiles": [ { "id": "ab1", "name": "Bonus", "typeName": "Abilities", "characteristics": [ { "name": "Description", "$text": "Bonus text." } ] } ],
@@ -31,7 +31,9 @@ public class DetachmentEffectTests
               { "id": "d-b", "name": "Beta", "type": "upgrade", "costs": [ { "typeId": "82ae-1066-5107-6ae0", "name": "DP", "value": 1 } ], "rules": [ { "id": "rb", "name": "B", "description": "b" } ] } ] },
             { "id": "u", "name": "Rig", "type": "model", "categoryLinks": [ { "targetId": "c-fac" } ],
               "profiles": [ { "id": "pu", "name": "Rig", "typeName": "Unit", "characteristics": [ { "name": "M", "$text": "8\"" } ] } ],
+              "costs": [ { "typeId": "51b2-306e-1021-d207", "name": "pts", "value": 100 } ],
               "selectionEntries": [
+                {{extraEntries}}
                 { "id": "gun", "name": "Gun", "type": "upgrade", "constraints": [ { "type": "min", "value": 1, "field": "selections", "scope": "parent" } ],
                   "profiles": [ { "id": "pg", "name": "Gun", "typeName": "Ranged Weapons", "characteristics": [ { "name": "S", "$text": "4" }, { "name": "Keywords", "$text": "" } ] } ] },
                 { "id": "blade", "name": "Blade", "type": "upgrade", "constraints": [ { "type": "min", "value": 1, "field": "selections", "scope": "parent" } ],
@@ -143,6 +145,35 @@ public class DetachmentEffectTests
         var (r, warnings) = Run(Catalogue(gated));
         Assert.Empty(r.Detachments.Single(d => d.Name == "Alpha").Effects);
         Assert.Contains(warnings, w => w.Contains("not converted") && w.Contains("Rig"));
+    }
+
+    private const string Power = """
+        { "id": "power", "name": "Power", "type": "upgrade", "hidden": true,
+          "constraints": [ { "type": "min", "value": 0, "field": "selections", "scope": "parent" }, { "type": "max", "value": 0, "field": "selections", "scope": "parent" } ],
+          "costs": [ { "typeId": "51b2-306e-1021-d207", "name": "pts", "value": 35 } ],
+          "profiles": [ { "id": "pp", "name": "Power", "typeName": "Abilities", "characteristics": [ { "name": "Description", "$text": "Does a thing." } ] } ],
+          "modifiers": [
+            { "field": "hidden", "type": "set", "value": false, "conditions": [ { "type": "atLeast", "childId": "d-a", "field": "selections", "scope": "force", "value": 1 } ] },
+            { "field": "11111111-aaaa-bbbb-cccc-000000000000", "type": "set", "value": 1, "conditions": [ { "type": "atLeast", "childId": "d-a", "field": "selections", "scope": "force", "value": 1 } ] } ] },
+        """;
+
+    [Fact]
+    public void An_option_a_detachment_unlocks_adds_its_ability_and_its_points()
+    {
+        var (r, warnings) = Run(Catalogue("", "", Power));
+        var effect = Effect(r, "Alpha");
+        Assert.Equal("Power", Assert.Single(effect.AddedAbilities!).Title);
+        Assert.Equal(135, Assert.Single(effect.PointsOverride!).Cost);               // 100 base + 35 for the power
+        Assert.DoesNotContain(warnings, w => w.Contains("not converted"));            // its min/max limits are part of the unlock
+        Assert.Empty(r.Detachments.Single(d => d.Name == "Beta").Effects);
+    }
+
+    [Fact]
+    public void An_option_that_is_hidden_by_default_is_not_part_of_the_base_datasheet()
+    {
+        var (r, _) = Run(Catalogue("", "", Power));
+        Assert.DoesNotContain(r.Units.Single().UnitAbilities, a => a.Title == "Power");
+        Assert.Equal(100, Assert.Single(r.Units.Single().Points).Cost);
     }
 
     [Fact]

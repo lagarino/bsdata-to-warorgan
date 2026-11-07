@@ -10,7 +10,7 @@ computer.
 
 > **Status: early development, no release yet.** The tool currently converts the **Orks** and **Necrons** catalogues of the
 > community Warhammer 40,000 11th Edition data (units, statlines, weapons, wargear, points, army rules, leaders, detachments and enhancements).
-> Allies and stratagems are not converted yet, and some detachment effects (options a detachment unlocks, list-building limit changes) are only reported. The generated dataset has been imported into WarOrgan
+> Allies and stratagems are not converted yet, and a few detachment effects (list-building limit changes, effects under extra conditions) are only reported. The generated dataset has been imported into WarOrgan
 > and used to build Orks and Necrons lists (checked by hand so far, not unit by unit). See [What works today](#what-works-today).
 
 ---
@@ -133,9 +133,9 @@ Every phase of the converter ships with tests; see [docs/05-plan](docs/05-plan.m
 | Model compositions and points (model-count tiers, per-copy price changes) | done |
 | Wargear: starting equipment, replacement choices, additions, costs, granted abilities | done (baseline view, see below) |
 | Dataset definition, ability lists, validation with the WarOrgan builder, zip | done |
-| Leaders, support units and retainers (who may join which unit) | done (units that can only be joined with a selected enhancement are left out for now) |
+| Leaders, support units and retainers (who may join which unit), including leaders that need a specific enhancement to join a unit | done |
 | Detachments (cost, force dispositions, rule text) and enhancements (cost, text, who may take them) | done |
-| Detachment effects on datasheets (weapon and unit stat changes, added keywords and abilities, added categories) | done; options a detachment unlocks and list-building limit changes are reported, not converted yet |
+| Detachment effects on datasheets (weapon and unit stat changes, added keywords and abilities, added categories, options a detachment unlocks) | done; list-building limit changes and a few effects under extra conditions are reported, not converted |
 | Allies and chapter rosters (for example Space Marine chapters, Knights) | planned |
 | Stratagems (optional download from a third-party website, local cache) | planned |
 | Settings file and cache commands | planned |

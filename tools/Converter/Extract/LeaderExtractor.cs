@@ -11,15 +11,20 @@ namespace WarOrganConverter.Extract;
 /// a category carried by several becomes a keyword the attachment is allowed by.
 /// Labels: "Leader" = default leader, "Supported by" = Support, "Retainers" = a unit that must join a unit that already
 /// has a leader with a given keyword (the app's RequiredLeaderKeywords rule).
-/// Units that may only be joined when an option is selected (atLeast on an upgrade, for example an enhancement) are left out
-/// and reported: the option has to grant them (DatasheetAdjustment LedUnitNames) once enhancements are converted.
+/// Units that may only be joined when an option is selected (atLeast on an upgrade, for example an enhancement) are not in the
+/// leader's list; they are returned as <see cref="GatedAttachment"/> so the enhancement can grant them (DatasheetAdjustment
+/// LedUnitNames).
 /// </summary>
 public sealed class LeaderExtractor(BsdDatabase db)
 {
     public const string RetainersType = "Retainers";
 
-    public void Apply(IReadOnlyList<ResolvedUnit> resolved, IReadOnlyList<Unit> units, List<string> warnings)
+    /// <summary>A leader that may join <paramref name="UnitIds"/> only while <paramref name="Option"/> is selected.</summary>
+    public sealed record GatedAttachment(int LeaderIndex, List<string> UnitIds, string Option);
+
+    public List<GatedAttachment> Apply(IReadOnlyList<ResolvedUnit> resolved, IReadOnlyList<Unit> units, List<string> warnings)
     {
+        var gatedResult = new List<GatedAttachment>();
         // category id -> indexes of the roster units that carry it
         var carriers = new Dictionary<string, List<int>>(StringComparer.Ordinal);
         for (var i = 0; i < resolved.Count; i++)
@@ -51,10 +56,10 @@ public sealed class LeaderExtractor(BsdDatabase db)
                 if (members.Count == 1) AddUnique(info.UnitNames, units[members[0]].Id);
                 else if (members.Count > 1) AddUnique(info.AttachableByKeyword ??= [], db.Name(cid)!.Trim());
             }
-            foreach (var g in gated.Distinct().Where(g => !categories.Contains(g.Category)))
+            foreach (var group in gated.Distinct().Where(g => !categories.Contains(g.Category)).GroupBy(g => g.Option))
             {
-                var names = carriers[g.Category].Where(m => m != i).Select(m => units[m].DisplayName).Distinct();
-                warnings.Add($"{units[i].DisplayName}: may lead {string.Join(", ", names)} only with '{g.Option}'; left out until that option grants it");
+                var ids = group.SelectMany(g => carriers[g.Category].Where(m => m != i).Select(m => units[m].Id)).Distinct().ToList();
+                if (ids.Count > 0) gatedResult.Add(new GatedAttachment(i, ids, group.Key));
             }
 
             if (label == RetainersType)
@@ -86,6 +91,7 @@ public sealed class LeaderExtractor(BsdDatabase db)
                 units[i].LeaderInfo = null;
             }
         }
+        return gatedResult;
     }
 
     /// <summary>

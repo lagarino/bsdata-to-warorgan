@@ -76,7 +76,7 @@ public class LeaderTests
     }
 
     [Fact]
-    public void A_unit_that_can_only_be_joined_with_a_selected_option_is_left_out_and_reported()
+    public void A_unit_that_can_only_be_joined_with_a_selected_option_is_left_out_and_reported_when_nothing_grants_it()
     {
         const string gated = """
             { "name": "x", "label": "Leader", "action": "group", "min": 0, "max": 1, "conditionGroups": [ { "type": "or", "conditions": [
@@ -87,7 +87,7 @@ public class LeaderTests
             """;
         var (units, warnings) = WithLeaders(Entry("u2", "Hatted Boss", "model", ["c-g"], gated));
         Assert.Equal(["ALPHA SQUAD"], Info(units, "Hatted Boss")!.UnitNames);
-        Assert.Contains(warnings, w => w.Contains("Hatted Boss") && w.Contains("Beta Squad") && w.Contains("only with"));
+        Assert.Contains(warnings, w => w.Contains("Hatted Boss") && w.Contains("BETA SQUAD") && w.Contains("only with") && w.Contains("not a converted enhancement"));
     }
 
     [Fact]

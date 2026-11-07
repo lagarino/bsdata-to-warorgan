@@ -37,6 +37,7 @@ public sealed class DetachmentEffectExtractor
         public List<StatAdjustment> Stats { get; } = [];
         public List<UnitInfoSection> Abilities { get; } = [];
         public List<string> Keywords { get; } = [];
+        public int PointsDelta { get; set; }
     }
 
     public void Apply(IReadOnlyList<ResolvedUnit> resolved, IReadOnlyList<Unit> units, IReadOnlyList<(JsonObject Entry, Detachment Model)> detachments, List<string> warnings)
@@ -55,6 +56,8 @@ public sealed class DetachmentEffectExtractor
             if (weapons.Count > 0) effect.WeaponStatAdjustments = weapons;
             if (e.Stats.Count > 0) effect.StatAdjustments = e.Stats;
             if (e.Abilities.Count > 0) effect.AddedAbilities = e.Abilities;
+            if (e.PointsDelta > 0)
+                effect.PointsOverride = units[unitIndex].Points.Select(p => new PointsDefinition { UnitCount = p.UnitCount, ModelCount = p.ModelCount, Cost = p.Cost + e.PointsDelta }).ToList();
             if (e.Keywords.Count > 0)
                 effect.DatasheetAdjustments = [new DatasheetAdjustment { Target = DatasheetFeature.Keywords, Type = StatAdjustmentType.Add, Scope = StatAdjustmentScope.Unit, Values = e.Keywords }];
             byId[detId].Effects.Add(effect);
@@ -87,6 +90,12 @@ public sealed class DetachmentEffectExtractor
     private void Modifiers(JsonObject holder, JsonObject scope, int unitIndex, Unit unit, Dictionary<string, Detachment> byId,
         Dictionary<(string, int), Effect> effects, Dictionary<string, HashSet<string>> unsupported)
     {
+        // An option that is hidden by default and shown (and made mandatory) by a detachment is something that detachment adds.
+        var unlocked = ModifiersOf(holder)
+            .Where(x => BsdDatabase.Str(x.Modifier, "field") == "hidden" && BsdDatabase.Str(x.Modifier, "type") == "set"
+                        && x.Modifier["value"] is JsonValue hv && hv.TryGetValue<bool>(out var hidden) && !hidden)
+            .SelectMany(x => AllConditions(x.Modifier).Concat(x.Inherited))
+            .Select(c => BsdDatabase.Str(c, "childId")).Where(id => id is not null && byId.ContainsKey(id)).Cast<string>().ToHashSet();
         foreach (var (m, inherited) in ModifiersOf(holder))
         {
             var conditions = AllConditions(m).Concat(inherited).ToList();
@@ -98,6 +107,17 @@ public sealed class DetachmentEffectExtractor
             void Report(string reason) => (unsupported.TryGetValue(reason, out var set) ? set : unsupported[reason] = []).Add(unit.DisplayName ?? unit.Id);
 
             if (field == "annotation") continue;                                       // display only
+            if (field == "hidden" && type == "set" && m["value"] is JsonValue unhide && unhide.TryGetValue<bool>(out var hiddenValue) && !hiddenValue)
+            {
+                foreach (var detId in detachmentConditions.Select(c => BsdDatabase.Str(c, "childId")!).Distinct())
+                {
+                    if (!effects.TryGetValue((detId, unitIndex), out var unlockEffect)) effects[(detId, unitIndex)] = unlockEffect = new Effect();
+                    Unlock(scope, unlockEffect, Report);
+                }
+                continue;
+            }
+            if (conditions.Any(c => BsdDatabase.Str(c, "childId") is { } cid && unlocked.Contains(cid)) && !_characteristics.ContainsKey(field)
+                && field is not ("add-info" or "category" or "hidden")) continue;       // min/max limits of an unlocked option
             var simple = conditions.Count == detachmentConditions.Count
                          && detachmentConditions.All(c => BsdDatabase.Str(c, "type") is "atLeast" or "instanceOf" or "greaterThan");
             if (!simple) { Report($"{FieldLabel(field)} {type} only under extra conditions or when the detachment is not selected"); continue; }
@@ -199,6 +219,26 @@ public sealed class DetachmentEffectExtractor
         }
         report($"{FieldLabel(field)} {type}");
         return false;
+    }
+
+    /// <summary>An option a detachment adds: its ability profiles become added abilities and its points cost raises the unit's cost.</summary>
+    private void Unlock(JsonObject option, Effect effect, Action<string> report)
+    {
+        var cost = BsdDatabase.Arr(option, "costs").Where(c => BsdDatabase.Str(c, "typeId") == PointsExtractor.PtsTypeId)
+            .Select(c => c["value"] is JsonValue v && v.TryGetValue<double>(out var d) ? (int)d : 0).FirstOrDefault();
+        effect.PointsDelta += Math.Max(0, cost);
+        var added = false;
+        foreach (var p in BsdDatabase.Arr(option, "profiles").Where(p => BsdDatabase.Str(p, "typeName") == "Abilities"))
+        {
+            var title = BsdDatabase.Str(p, "name")?.Trim();
+            var text = BsdDatabase.Arr(p, "characteristics").Select(c => BsdDatabase.Str(c, "$text")).FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+            if (string.IsNullOrEmpty(title) || string.IsNullOrWhiteSpace(text)) continue;
+            if (!effect.Abilities.Any(a => a.Title == title)) effect.Abilities.Add(new UnitInfoSection { Title = title, Text = text.Trim() });
+            added = true;
+        }
+        if (BsdDatabase.Arr(option, "profiles").Any(p => BsdDatabase.Str(p, "typeName") is "Ranged Weapons" or "Melee Weapons"))
+            report($"option '{BsdDatabase.Str(option, "name")}' unlocked by a detachment brings weapons");
+        else if (!added && cost == 0) report($"option '{BsdDatabase.Str(option, "name")}' unlocked by a detachment has no ability or cost");
     }
 
     private static string FieldLabel(string field) => field.Length > 12 && field.Count(c => c == '-') >= 3 ? "list-building limit" : field;
