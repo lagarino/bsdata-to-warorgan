@@ -8,7 +8,7 @@ A command-line tool that converts [BattleScribe](https://battlescribe.net/) data
 tool on your own computer, against your own copy of a BSData repository, and the dataset it creates stays on your
 computer.
 
-> **Status: early development, no release yet.** The tool converts BSData catalogues for one tabletop wargame (the first
+> **Status: early development; the first release (0.1) is prepared but not published.** The tool converts BSData catalogues for one tabletop wargame (the first
 > target of the project): units, statlines, weapons, wargear, points, army rules, leaders, detachments, enhancements and
 > detachment effects. Allies are converted when both catalogues are in the same run; stratagems are not converted yet. Generated datasets
 > have been imported into WarOrgan and used to build army lists. See [What works today](#3-what-works-today).
@@ -27,8 +27,10 @@ computer.
    ```
 
    This is the folder you give to `--bsdata`.
-2. **The tool.** There is no prebuilt download yet, so for now you build it once (section 2) or run it straight from
-   the source as shown here. Running from source needs the [.NET 10 SDK](https://dotnet.microsoft.com/download).
+2. **The tool.** Either a prebuilt package from the repository's Releases page (Windows, Linux or macOS: unpack it and run
+   `warorgan-converter`; no .NET installation needed), or build it yourself (section 2) and run it from the source as shown
+   here, which needs the [.NET 10 SDK](https://dotnet.microsoft.com/download). `warorgan-converter --version` shows which
+   build you have.
 3. **The WarOrgan app**, to import the result.
 
 ### Run it
@@ -115,8 +117,12 @@ dotnet publish tools/Converter -c Release -r win-x64 --self-contained -p:Publish
 publish\warorgan-converter.exe help
 ```
 
-(Use `-r linux-x64` or `-r osx-arm64` for other systems.) The publish folder also receives sample files from the builder
-project; the program itself is the single `warorgan-converter` file.
+(Use `-r linux-x64` or `-r osx-arm64` for other systems.) The publish folder also holds the licence texts and this readme; the
+sample dataset that the builder project ships is removed from it.
+
+Releases are built by the GitHub Actions workflow `.github/workflows/release.yml` when a tag such as `v0.1.0` is pushed: it runs the
+unit tests, publishes the three packages and attaches them to a GitHub release. `ci.yml` builds and tests every push. Both build
+against a fixed commit of WarOrgan.Data (the `WARORGAN_DATA_COMMIT` value at the top of the workflows).
 
 Every phase of the converter ships with tests; see [docs/05-plan](docs/05-plan.md), "Testing policy".
 

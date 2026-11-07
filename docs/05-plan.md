@@ -113,6 +113,9 @@ Every converter phase lands together with its tests, and a phase is not done unt
 
 ## Phase 3 - Releases (binary distribution)
 
+**Status:** prepared. `THIRD-PARTY-NOTICES.md`, the packaging target that removes the sample dataset, `--version`, `ci.yml` and `release.yml` are in
+the repo; the first tag (`v0.1.0`) has not been pushed.
+
 Publishing prebuilt executables as GitHub Releases (for example `v0.1.0`) is feasible:
 
 - The tool contains no BSData or Wahapedia content (both are read at run time from the user's machine).

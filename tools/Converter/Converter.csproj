@@ -7,6 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>WarOrganConverter</RootNamespace>
     <AssemblyName>warorgan-converter</AssemblyName>
+    <Version>0.1.0</Version>
+    <!-- The commit of WarOrgan.Data a release was built from (set by the release workflow). -->
+    <InformationalVersion Condition="'$(WarOrganDataCommit)' != ''">$(Version)+warorgan-data.$(WarOrganDataCommit)</InformationalVersion>
     <!-- Location of a checkout of https://github.com/zenchovey/WarOrgan.Data (MIT). Override with -p:WarOrganDataPath=... -->
     <WarOrganDataPath Condition="'$(WarOrganDataPath)' == ''">$(MSBuildThisFileDirectory)..\..\..\WarOrgan.Data</WarOrganDataPath>
   </PropertyGroup>
@@ -16,5 +19,14 @@
     <!-- The builder project provides the validation and the zip writer the app's datasets are made with. -->
     <ProjectReference Include="$(WarOrganDataPath)\WarOrgan.Data.BuildDataset\WarOrgan.Data.BuildDataset.csproj" />
   </ItemGroup>
+
+  <!-- A release package: the program, the licence texts and the readme. The builder project also copies a sample dataset
+       ("Assets") that is not ours to ship and not needed to run. -->
+  <ItemGroup>
+    <None Include="..\..\LICENSE;..\..\THIRD-PARTY-NOTICES.md;..\..\README.md" CopyToPublishDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+  </ItemGroup>
+  <Target Name="RemoveSampleAssets" AfterTargets="Publish">
+    <RemoveDir Directories="$(PublishDir)Assets" />
+  </Target>
 
 </Project>

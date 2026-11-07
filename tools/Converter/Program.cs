@@ -24,6 +24,13 @@ IEnumerable<string> Opts(string name)
 }
 
 var command = argsList.FirstOrDefault() ?? "help";
+if (command is "--version" or "version")
+{
+    var version = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "unknown";
+    Console.WriteLine($"warorgan-converter {version}");
+    return 0;
+}
 if (command is not ("survey" or "extract" or "convert"))
 {
     Console.WriteLine("Usage: warorgan-converter survey|extract|convert --bsdata <folder> [--faction <catalogue name>]...");
