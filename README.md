@@ -1,66 +1,96 @@
-# WarOrgan dataset for Warhammer 40,000 (11th Edition)
+# bsdata-to-warorgan
 
-Work-in-progress effort to build a [WarOrgan](https://github.com/) dataset for plain Warhammer 40,000
-11th Edition games, converted from the community BattleScribe data in
-[BSData/wh40k-11e](https://github.com/BSData/wh40k-11e).
+A command-line tool that converts [BattleScribe](https://battlescribe.net/) data, as maintained by the community in
+[BSData](https://github.com/BSData) repositories, into datasets for the army-building app
+[WarOrgan](https://github.com/zenchovey/WarOrgan.Data).
 
-**Status: analysis (phases 0-2 of the plan) and planning complete; no converter written yet.** Nothing in this repo is a
-usable dataset yet.
+**This repo contains tooling and documentation only. It contains no game data and no generated datasets.** You point the
+tool at your own local checkout of a BSData repository; the dataset it produces is written to your own machine and is
+not meant to be committed or published.
 
-**This repo contains tooling and notes only.** The converter (C#, planned) is meant for anyone to run against their
-own checkout of BSData/wh40k-11e. The dataset it generates stays on the machine of whoever runs it and is never
-committed here (see decision D5; `.gitignore` excludes output folders and ZIPs).
+> Unofficial and unaffiliated. This project is not endorsed by or connected to WarOrgan, BSData, or any games publisher.
+> Game names and rules belong to their owners. You are responsible for how you use the data you convert and the output
+> you generate.
 
-## Scope
+## Status
 
-In: matched-play style 40k army building (units, wargear, points, leaders, detachments,
-enhancements, army rules, allies, stratagems from a *different* source).
-Out: Boarding Actions, Crusade, Unbound Adversaries, Legends, Crucible characters. See [docs/00-scope-and-decisions.md](docs/00-scope-and-decisions.md).
+Early development; there is no release yet. What exists:
 
-## Read in this order
+- A .NET 10 converter skeleton in [`tools/Converter`](tools/Converter): BSData loader, scope filter, roster resolution,
+  and extraction of statlines, weapons, keywords and abilities (`survey` and `extract` commands).
+- Written analysis of the BSData structure, the WarOrgan model and the mapping between them, plus the gaps and the plan
+  (see below).
+
+Not yet: model compositions, points, wargear, leaders, detachments, dataset output and validation.
+
+## Design
+
+- **Generic tool, one first target.** The converter is written against the BSData structure and the WarOrgan model,
+  not against one game. The first target is the community Warhammer 40,000 11th Edition catalogues
+  ([BSData/wh40k-11e](https://github.com/BSData/wh40k-11e)); that work drives the analysis documents and the first
+  mappings, and game-specific rules stay in clearly separated mapping and override files so other BSData
+  repositories can be supported later.
+- **Local data only.** Output goes to a folder you choose and is excluded by `.gitignore`.
+- **Optional stratagem source.** BSData has no stratagem entries for the first target, so the plan includes an optional
+  step that downloads them from a third-party website into a local cache (see [docs/06-stratagems](docs/06-stratagems.md)).
+  That site states no licence, so the step is optional, personal-use only, and nothing it fetches is stored in this repo.
+- **Uses the WarOrgan model.** The tool references the `WarOrgan.Data` model project (MIT licence) so that it writes exactly
+  what the app expects and can run the same validation.
+
+## Documentation
+
+The analysis was done against the Warhammer 40,000 11th Edition catalogues, so the documents refer to that game.
 
 | Doc | What it holds |
 | --- | --- |
 | [00-scope-and-decisions](docs/00-scope-and-decisions.md) | Scope, decisions taken, decisions still open |
-| [01-source-data](docs/01-source-data.md) | How the BSData 11e files are structured, with ids, counts and examples |
+| [01-source-data](docs/01-source-data.md) | How the BSData files are structured, with ids, counts and examples |
 | [02-target-model](docs/02-target-model.md) | The WarOrgan.Data model, its builder and validation rules (as read from source) |
 | [03-mapping](docs/03-mapping.md) | BSData concept -> WarOrgan field table |
 | [04-gaps](docs/04-gaps.md) | What the WarOrgan model cannot (or may not) represent, evidence and workarounds |
 | [05-plan](docs/05-plan.md) | Phased plan and converter design |
-| [06-stratagems](docs/06-stratagems.md) | Stratagem source research (not started) |
-| [07-app-behaviour](docs/07-app-behaviour.md) | What the installed WarOrgan app really does (read from its code): points algorithm, limits, hard-wired dataset IDs |
-| [08-phase1-findings](docs/08-phase1-findings.md) | Phase 1 results: roster assembly, dispositions, Warlord, army rules, keywords, point/visibility modifier classes, leaders |
+| [06-stratagems](docs/06-stratagems.md) | Optional stratagem source and local cache design |
+| [07-app-behaviour](docs/07-app-behaviour.md) | What the installed WarOrgan app does (read from its code): points algorithm, limits, hard-wired dataset IDs |
+| [08-phase1-findings](docs/08-phase1-findings.md) | Phase 1 results: roster assembly, dispositions, army rules, keywords, modifier classes, leaders |
 | [tools/analysis](tools/analysis/README.md) | The throwaway Python scripts that produced the findings |
+
+## Building and trying it
+
+Requirements: .NET 10 SDK, a checkout of the BSData repository you want to convert, and a checkout of
+[WarOrgan.Data](https://github.com/zenchovey/WarOrgan.Data) next to this repo (or pass `-p:WarOrganDataPath=<path>`).
+
+```
+cd tools/Converter
+dotnet build
+dotnet run -- survey  --bsdata <path to BSData checkout>
+dotnet run -- extract --bsdata <path to BSData checkout> --faction "<catalogue name>"
+```
 
 ## Provenance of the analysis
 
 | Input | Version examined |
 | --- | --- |
-| BSData/wh40k-11e | commit `11ad64c81c058e5deeccd1cb23e64a972029c7b0` (2026-11-06, "Fixes #3389"), game system revision 18 |
+| BSData/wh40k-11e | commit `11ad64c81c058e5deeccd1cb23e64a972029c7b0` (2026-11-06), game system revision 18 |
 | Installed WarOrgan app | exe file version 1.3.0, embedded model identical to the repo model, `DataSetFormatVersion` 1 |
-| WarOrgan.Data | local clone at commit `45f934b8efcf4c988cd2cfd124458d78f09920c7`, `DataSetFormatVersion` = 1 |
+| WarOrgan.Data | commit `45f934b8efcf4c988cd2cfd124458d78f09920c7`, `DataSetFormatVersion` = 1 |
 
-App behaviour comes from decompiling the installed WarOrgan app (kept out of this repo); see
-[docs/07-app-behaviour](docs/07-app-behaviour.md).
+App behaviour comes from reading the installed WarOrgan app with a decompiler (the decompiled code is not kept in this
+repo); see [docs/07-app-behaviour](docs/07-app-behaviour.md).
 
-## Licensing note
+## Licensing
 
-BSData repositories carry no LICENSE file at the commit examined (the README says "maintained by
-community, in no way endorsed by any company/publisher"). This repo redistributes none of that content and no
-generated dataset (decision D5); it contains only analysis and tooling. Check upstream BSData terms and the
-Games Workshop IP position for your own use of the generated output.
+- **This repo's own code and documentation:** no licence has been chosen yet (to be decided before the first release).
+- **BSData:** the repositories examined carry no LICENSE file. This repo redistributes none of their content.
+- **WarOrgan.Data (model library):** [MIT](https://github.com/zenchovey/WarOrgan.Data/blob/main/LICENSE), copyright (c) 2026
+  zenchovey. That permits redistributing a build that includes the model library as long as the copyright and permission
+  notice travel with it, so release packages of this tool will include a third-party notice. See
+  [docs/05-plan](docs/05-plan.md), "Phase 3 - Releases".
+- **Generated datasets** contain converted game content. Check the terms of the data source and of the rights holders
+  before sharing them; this project does not publish any.
 
-### WarOrgan.Data (model library) - MIT
+## Resuming work
 
-`WarOrgan.Data` (https://github.com/zenchovey/WarOrgan.Data, commit `45f934b8efcf4c988cd2cfd124458d78f09920c7`) is under the
-**MIT licence** (Copyright (c) 2026 zenchovey; its README says the model, build tools and documentation may be used, modified and
-shared under it). That permits redistributing a compiled build that includes the model library, provided the copyright and
-permission notice travel with it. Release packages of this tool must therefore include a third-party notice with the
-WarOrgan.Data MIT text. Decision for releases: see `docs/05-plan.md` (Phase 3 - releases).
-
-## Resuming
-
-1. Read [docs/05-plan](docs/05-plan.md), phase 1 is the next piece of work.
-2. Clone `BSData/wh40k-11e` next to this repo (`../wh40k-11e`) and `WarOrgan.Data` (`../WarOrgan.Data`); check out the
-   commits listed under *Provenance* to reproduce the numbers, or re-run `tools/analysis` on newer data and update the docs.
-3. Install the .NET 10 SDK, then settle the remaining open decisions (O4, O5, O7).
+1. Read [docs/05-plan](docs/05-plan.md) for the phases and the next piece of work.
+2. Clone the BSData repository you want to convert and `WarOrgan.Data` as siblings of this repo; check out the commits
+   under *Provenance* to reproduce the numbers in the analysis, or re-run `tools/analysis` on newer data.
+3. Install the .NET 10 SDK.

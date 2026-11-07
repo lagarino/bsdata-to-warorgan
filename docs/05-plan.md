@@ -7,7 +7,7 @@ live in small curated files next to the converter and are merged in.
 ## Phase 0 - Repo and decisions  (now)
 
 - [x] Analyse source and target; write these docs.
-- [x] Create the GitHub remote (private, `lagarino/warorgan-wh40k-11e`).
+- [x] Create the GitHub remote (private, `lagarino/bsdata-to-warorgan`, renamed from `warorgan-wh40k-11e`).
 - [x] Decided: C# converter (D4), tool-only repo with local-only output (D5), no Crucible (D6).
 - [x] Install the .NET 10 SDK; read the installed app's behaviour ([07-app-behaviour](07-app-behaviour.md)).
 - [ ] Remaining open decisions: O4, O5, **O7 (dataset ID, see gap G7)** in [00-scope-and-decisions](00-scope-and-decisions.md).

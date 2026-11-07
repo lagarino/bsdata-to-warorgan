@@ -2,8 +2,14 @@
 
 ## Goal
 
-Produce a WarOrgan dataset ZIP (via `WarOrgan.Data.BuildDataset`) for Warhammer 40,000 11th Edition,
-generated reproducibly from BSData/wh40k-11e by a converter, so it can be regenerated when BSData updates.
+Build a reusable command-line tool that converts BattleScribe data (BSData catalogues) into WarOrgan datasets
+(validated and zipped via `WarOrgan.Data.BuildDataset`), reproducibly, so a dataset can be regenerated whenever the
+BSData source is updated. The tool is generic in design; game-specific rules live in separate mapping and override
+files. The first target, and the subject of the analysis in these documents, is the community BSData
+Warhammer 40,000 11th Edition catalogues (`BSData/wh40k-11e`). The repository holds tooling and documentation only,
+never game data or generated datasets (D5).
+
+The scope sections below describe that first target.
 
 ## In scope
 

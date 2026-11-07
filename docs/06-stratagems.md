@@ -59,7 +59,7 @@ later run (no network access needed after the first successful download). Specif
 
 | Aspect | Design |
 | --- | --- |
-| Location | a folder on disk, outside any git repo; setting `wahapediaCacheDir`, default under the user's local application data (for example `%LOCALAPPDATA%\warorgan-wh40k-11e\cache\wahapedia\` on Windows) |
+| Location | a folder on disk, outside any git repo; setting `wahapediaCacheDir`, default under the user's local application data (for example `%LOCALAPPDATA%\bsdata-to-warorgan\cache\wahapedia\` on Windows) |
 | Persistence | files stay between runs and between tool versions; a run with a populated cache makes **no** requests |
 | Contents | the raw HTML of the core-rules page and one page per faction, plus a small index file (URL, fetch date/time, HTTP status, ETag / Last-Modified, content hash) so staleness is visible |
 | Commands | `cache status` (what is cached, when, size), `cache rebuild` (re-download everything; conditional requests where the server supports ETag / If-Modified-Since), `cache refresh <faction>` (one page), `cache clear` (delete all cached files and the index, asking for confirmation unless `--yes`) |
