@@ -9,9 +9,9 @@ tool on your own computer, against your own copy of a BSData repository, and the
 computer.
 
 > **Status: early development, no release yet.** The tool currently converts the **Orks** and **Necrons** catalogues of the
-> community Warhammer 40,000 11th Edition data (units, statlines, weapons, wargear, points, army rules). Leaders,
-> detachments, enhancements, allies and stratagems are not converted yet, and the output has not been confirmed to import
-> into the app yet. See [What works today](#what-works-today).
+> community Warhammer 40,000 11th Edition data (units, statlines, weapons, wargear, points, army rules, leaders). Detachments,
+> enhancements, allies and stratagems are not converted yet. The generated dataset has been imported into WarOrgan
+> and used to build Orks and Necrons lists (checked by hand so far, not unit by unit). See [What works today](#what-works-today).
 
 ---
 
@@ -73,8 +73,8 @@ Choose a `--dataset-id` that differs from any dataset you already have, unless y
 only enables its built-in army validation rules for datasets whose id is `Warhammer 40k 10th` or `Warhammer 40k 11th`
 (see [docs/07-app-behaviour](docs/07-app-behaviour.md)); with any other id, lists are not checked against those rules.
 
-> The first generated dataset has not been confirmed to import and display correctly in the app yet. If you try it,
-> please report what you see.
+> A generated Orks and Necrons dataset has been imported and used in the app; not every unit has been checked by
+> hand. If you find something wrong, please report what you see.
 
 ### Keep the result private
 
@@ -133,7 +133,7 @@ Every phase of the converter ships with tests; see [docs/05-plan](docs/05-plan.m
 | Model compositions and points (model-count tiers, per-copy price changes) | done |
 | Wargear: starting equipment, replacement choices, additions, costs, granted abilities | done (baseline view, see below) |
 | Dataset definition, ability lists, validation with the WarOrgan builder, zip | done |
-| Leaders and attached units | next |
+| Leaders, support units and retainers (who may join which unit) | done (units that can only be joined with a selected enhancement are left out for now) |
 | Detachments, enhancements, dispositions | planned |
 | Allies and chapter rosters (for example Space Marine chapters, Knights) | planned |
 | Stratagems (optional download from a third-party website, local cache) | planned |

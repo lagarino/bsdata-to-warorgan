@@ -81,11 +81,11 @@ foreach (var (file, root) in db.Roots.Where(kv => BsdDatabase.Str(kv.Value, "typ
     var units = resolver.Resolve(file);
     if (command == "extract")
     {
-        var extractor = new UnitExtractor(db);
         var warnings = new List<string>();
-        var armyRules = UnitExtractor.FindArmyRules(units);
+        var roster = RosterExtractor.Extract(db, file, warnings);
+        var armyRules = roster.ArmyRules;
         Console.WriteLine($"  army rules: {string.Join(", ", armyRules.Select(db.Name))}");
-        var extracted = units.Select(u => extractor.Extract(u, armyRules, warnings)).ToList();
+        var extracted = roster.Units;
         Console.WriteLine($"  keywords {extracted.Sum(u => u.Keywords.Count)}, faction keywords {extracted.Sum(u => u.FactionKeywords.Count)}, core abilities {extracted.Sum(u => u.CoreAbilities.Count)}, unit abilities {extracted.Sum(u => u.UnitAbilities.Count)}");
         Console.WriteLine($"  core abilities used: {string.Join("; ", extracted.SelectMany(u => u.CoreAbilities).Distinct().Order())}");
         Console.WriteLine($"{name}: {extracted.Count} units, {extracted.Sum(u => u.StatLines.Count)} statlines, {extracted.Sum(u => u.Weapons.Sum(w => w.Weapons.Count))} weapon profiles");

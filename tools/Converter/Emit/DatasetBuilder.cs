@@ -55,8 +55,6 @@ public static class DatasetBuilder
     /// <summary>Converts the selected catalogues and returns the validated dataset (before it is written).</summary>
     public static DatasetBuildModel Build(BsdDatabase db, BuildSettings settings, BuildReport report)
     {
-        var resolver = new RosterResolver(db);
-        var extractor = new UnitExtractor(db);
         var rules = SourceRules(db);
         var rosters = new List<FactionRoster>();
         var factions = new List<FactionInfo>();
@@ -64,13 +62,12 @@ public static class DatasetBuilder
         foreach (var (file, root) in SelectCatalogues(db, settings.Catalogues))
         {
             var catalogueName = BsdDatabase.Str(root, "name") ?? file;
-            var resolved = resolver.Resolve(file);
-            var army = UnitExtractor.FindArmyRules(resolved);
             var warnings = new List<string>();
+            var extracted = RosterExtractor.Extract(db, file, warnings);
+            var army = extracted.ArmyRules;
             var roster = new FactionRoster { Name = DisplayName(catalogueName) };
-            foreach (var u in resolved)
+            foreach (var unit in extracted.Units)
             {
-                var unit = extractor.Extract(u, army, warnings);
                 foreach (var set in unit.Weapons)
                     foreach (var w in set.Weapons)
                         w.Keywords = NullIfEmpty(AbilityDefinitions.NormaliseKeywords(w.Keywords));

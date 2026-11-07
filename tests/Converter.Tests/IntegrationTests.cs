@@ -30,12 +30,8 @@ public class IntegrationTests
 
     private static (List<Unit> Units, List<string> Warnings) ExtractAll(string file)
     {
-        var db = Database.Value;
-        var roster = new RosterResolver(db).Resolve(file);
-        var army = UnitExtractor.FindArmyRules(roster);
         var warnings = new List<string>();
-        var extractor = new UnitExtractor(db);
-        return (roster.Select(u => extractor.Extract(u, army, warnings)).ToList(), warnings);
+        return (RosterExtractor.Extract(Database.Value, file, warnings).Units, warnings);
     }
 
     [IntegrationFact]
@@ -99,6 +95,20 @@ public class IntegrationTests
             var priced = u.Points.Max(p => p.ModelCount);
             Assert.True(allowed <= priced, $"{u.Id}: models may total {allowed} but points only price up to {priced}");
         }
+    }
+
+    [IntegrationTheory]
+    [MemberData(nameof(Factions))]
+    public void Leader_attachments_name_real_units_and_every_character_leads_something(string file)
+    {
+        var (units, _) = ExtractAll(file);
+        var ids = units.Select(u => u.Id).ToHashSet();
+        foreach (var u in units.Where(u => u.LeaderInfo is not null))
+        {
+            Assert.All(u.LeaderInfo!.UnitNames, n => Assert.Contains(n, ids));
+            Assert.True(u.LeaderInfo.UnitNames.Count > 0 || u.LeaderInfo.AttachableByKeyword is { Count: > 0 }, $"{u.Id}: empty leader info");
+        }
+        Assert.Contains(units, u => u.LeaderInfo is not null);
     }
 
     [IntegrationTheory]
