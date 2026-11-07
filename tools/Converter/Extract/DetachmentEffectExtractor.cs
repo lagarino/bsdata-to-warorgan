@@ -83,7 +83,37 @@ public sealed class DetachmentEffectExtractor
             Walk(t.Node, root, unitIndex, unit, byId, effects, unsupported, seen, isRoot: false);
         }
         foreach (var l in BsdDatabase.Arr(node, "infoLinks"))
+        {
             Modifiers(l, node, unitIndex, unit, byId, effects, unsupported);
+            if (BsdDatabase.Str(l, "targetId") is { } tid && _db.ById.TryGetValue(tid, out var info))
+                AbilityOfDetachment(info.Node, BsdDatabase.Str(l, "name"), unitIndex, byId, effects);
+        }
+        foreach (var p in BsdDatabase.Arr(node, "profiles").Where(p => BsdDatabase.Str(p, "typeName") == "Abilities"))
+            AbilityOfDetachment(p, null, unitIndex, byId, effects);
+    }
+
+    /// <summary>
+    /// An ability that is hidden unless a detachment is selected ("fewer than 1 of this detachment" hides it) is an ability that
+    /// detachment gives the unit.
+    /// </summary>
+    private void AbilityOfDetachment(JsonObject ability, string? linkName, int unitIndex, Dictionary<string, Detachment> byId, Dictionary<(string, int), Effect> effects)
+    {
+        foreach (var m in BsdDatabase.Arr(ability, "modifiers"))
+        {
+            if (BsdDatabase.Str(m, "field") != "hidden" || m["value"]?.ToString() != "true") continue;
+            var conditions = AllConditions(m).ToList();
+            if (conditions.Count == 0 || !conditions.All(c => BsdDatabase.Str(c, "childId") is { } id && byId.ContainsKey(id)
+                    && (BsdDatabase.Str(c, "type") is "lessThan" or "atMost" || BsdDatabase.Str(c, "type") == "equalTo" && c["value"]?.ToString() == "0"))) continue;
+            var title = linkName ?? BsdDatabase.Str(ability, "name");
+            var text = BsdDatabase.Arr(ability, "characteristics").Select(c => BsdDatabase.Str(c, "$text")).FirstOrDefault(t => !string.IsNullOrWhiteSpace(t))
+                       ?? BsdDatabase.Str(ability, "description");
+            if (title is null || string.IsNullOrWhiteSpace(text)) continue;
+            foreach (var detId in conditions.Select(c => BsdDatabase.Str(c, "childId")!).Distinct())
+            {
+                if (!effects.TryGetValue((detId, unitIndex), out var effect)) effects[(detId, unitIndex)] = effect = new Effect();
+                if (!effect.Abilities.Any(a => a.Title == title.Trim())) effect.Abilities.Add(new UnitInfoSection { Title = title.Trim(), Text = text.Trim() });
+            }
+        }
     }
 
     /// <summary>Handles the modifiers of <paramref name="holder"/>; <paramref name="scope"/> is the entry whose profiles they change.</summary>

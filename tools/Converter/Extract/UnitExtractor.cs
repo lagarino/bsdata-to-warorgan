@@ -116,7 +116,7 @@ public sealed class UnitExtractor(BsdDatabase db)
             var tid = BsdDatabase.Str(l, "targetId");
             if (tid is null || !db.ById.TryGetValue(tid, out var t)) continue;
             var type = BsdDatabase.Str(l, "type");
-            if (IsHiddenByDefault(l)) continue;
+            if (IsHiddenByDefault(l) || IsHiddenByDefault(t.Node)) continue;
             if (type == "rule")
             {
                 if (armyRuleIds.Contains(tid)) continue;
@@ -135,7 +135,7 @@ public sealed class UnitExtractor(BsdDatabase db)
             else if (type == "profile" && BsdDatabase.Str(t.Node, "typeName") == "Abilities")
                 AddInfo(unit.UnitAbilities, BsdDatabase.Str(t.Node, "name"), ProfileText(t.Node));
         }
-        foreach (var p in BsdDatabase.Arr(entry, "profiles").Where(p => BsdDatabase.Str(p, "typeName") == "Abilities"))
+        foreach (var p in BsdDatabase.Arr(entry, "profiles").Where(p => BsdDatabase.Str(p, "typeName") == "Abilities" && !IsHiddenByDefault(p)))
             AddInfo(unit.UnitAbilities, BsdDatabase.Str(p, "name"), ProfileText(p));
     }
 
@@ -143,8 +143,8 @@ public sealed class UnitExtractor(BsdDatabase db)
     /// An ability link that a modifier hides unless something is present (a leader attached, an option taken) is not part of the unit
     /// as listed: with nothing selected, "fewer than 1" holds and the link is hidden.
     /// </summary>
-    private static bool IsHiddenByDefault(JsonObject link) =>
-        BsdDatabase.Arr(link, "modifiers").Any(m => BsdDatabase.Str(m, "field") == "hidden" && m["value"]?.ToString() == "true"
+    private static bool IsHiddenByDefault(JsonObject node) =>
+        BsdDatabase.Arr(node, "modifiers").Any(m => BsdDatabase.Str(m, "field") == "hidden" && m["value"]?.ToString() == "true"
             && (m["conditions"] is not null || m["conditionGroups"] is not null) && Visibility.HoldsWithNothingSelected(m, null) == true);
 
     private static string? ProfileText(JsonObject profile) =>

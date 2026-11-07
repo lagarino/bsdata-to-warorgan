@@ -260,6 +260,18 @@ public class IntegrationTests
     }
 
     [IntegrationFact]
+    public void An_ability_hidden_until_a_detachment_is_selected_belongs_to_the_detachment_only()
+    {
+        var settings = new WarOrganConverter.Emit.BuildSettings("Ability Test", new Version(1, 0, 0, 0), Path.GetTempPath(), ["Necrons"]);
+        var model = WarOrganConverter.Emit.DatasetBuilder.Build(Database.Value, settings, new WarOrganConverter.Emit.BuildReport());
+        var roster = model.Rosters.Single().Roster;
+        var dragon = roster.Units.Single(u => u.Id == "C'TAN SHARD OF THE VOID DRAGON");
+        Assert.DoesNotContain(dragon.UnitAbilities, a => a.Title!.StartsWith("Distortion Fields"));
+        var granted = roster.Detachments.SelectMany(d => d.Effects.Where(e => e.AffectedUnits!.Contains(dragon.Id)).SelectMany(e => e.AddedAbilities ?? []).Select(a => (d.Name, a.Title)));
+        Assert.Contains(granted, g => g.Title!.StartsWith("Distortion Fields"));
+    }
+
+    [IntegrationFact]
     public void Imported_units_of_other_factions_become_allies_and_validate()
     {
         var settings = new WarOrganConverter.Emit.BuildSettings("Ally Test", new Version(1, 0, 0, 0), Path.GetTempPath(),
