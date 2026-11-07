@@ -96,6 +96,7 @@ public sealed class UnitExtractor(BsdDatabase db)
             var tid = BsdDatabase.Str(l, "targetId");
             if (tid is null || !db.ById.TryGetValue(tid, out var t)) continue;
             var type = BsdDatabase.Str(l, "type");
+            if (IsHiddenByDefault(l)) continue;
             if (type == "rule")
             {
                 if (armyRuleIds.Contains(tid)) continue;
@@ -116,6 +117,42 @@ public sealed class UnitExtractor(BsdDatabase db)
         }
         foreach (var p in BsdDatabase.Arr(entry, "profiles").Where(p => BsdDatabase.Str(p, "typeName") == "Abilities"))
             AddInfo(unit.UnitAbilities, BsdDatabase.Str(p, "name"), ProfileText(p));
+    }
+
+    /// <summary>
+    /// An ability link that a modifier hides unless something is present (a leader attached, an option taken) is not part of the unit
+    /// as listed: with nothing selected, "fewer than 1" holds and the link is hidden.
+    /// </summary>
+    private static bool IsHiddenByDefault(JsonObject link) =>
+        BsdDatabase.Arr(link, "modifiers").Any(m => BsdDatabase.Str(m, "field") == "hidden" && m["value"]?.ToString() == "true"
+            && (m["conditions"] is not null || m["conditionGroups"] is not null) && NothingSelectedHolds(m) == true);
+
+    /// <summary>Whether the conditions hold when nothing is selected; null when they cannot be told.</summary>
+    private static bool? NothingSelectedHolds(JsonObject node)
+    {
+        var results = new List<bool?>();
+        foreach (var c in BsdDatabase.Arr(node, "conditions"))
+        {
+            var value = c["value"] is JsonValue v && v.TryGetValue<double>(out var d) ? d : (double?)null;
+            var field = BsdDatabase.Str(c, "field");
+            if (field is not ("selections" or "associations") || value is null) { results.Add(null); continue; }
+            results.Add(BsdDatabase.Str(c, "type") switch
+            {
+                "lessThan" => 0 < value,
+                "atMost" => 0 <= value,
+                "equalTo" => value == 0,
+                "greaterThan" => 0 > value,
+                "atLeast" => 0 >= value,
+                "notEqualTo" => value != 0,
+                "notInstanceOf" => true,
+                "instanceOf" => false,
+                _ => null,
+            });
+        }
+        foreach (var g in BsdDatabase.Arr(node, "conditionGroups")) results.Add(NothingSelectedHolds(g));
+        if (results.Count == 0) return null;
+        if (BsdDatabase.Str(node, "type") == "or") return results.Any(r => r == true) ? true : results.Any(r => r is null) ? null : false;
+        return results.Any(r => r == false) ? false : results.Any(r => r is null) ? null : true;
     }
 
     private static string? ProfileText(JsonObject profile) =>

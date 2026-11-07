@@ -124,3 +124,32 @@ public class ExtractionTests
         Assert.Contains(warnings, w => w.Contains("no unit profile"));
     }
 }
+
+/// <summary>An ability granted only while a leader is attached (the link is hidden when no association exists) is not a baseline ability.</summary>
+public class ConditionalAbilityTests
+{
+    private const string Catalogue = """
+    { "catalogue": { "id": "cat-x", "name": "Test - X", "type": "catalogue",
+      "sharedSelectionEntries": [
+        { "id": "u-x", "name": "Guards", "type": "unit", "hidden": false,
+          "infoLinks": [
+            { "type": "rule", "targetId": "r-fnp", "name": "Feel No Pain",
+              "modifiers": [ { "field": "name", "type": "append", "value": "5+" },
+                             { "field": "hidden", "type": "set", "value": true, "conditions": [ { "type": "lessThan", "field": "associations", "scope": "self", "childId": "x", "value": 1 } ] } ] },
+            { "type": "rule", "targetId": "r-dd", "name": "Deadly Demise",
+              "modifiers": [ { "field": "hidden", "type": "set", "value": true, "conditions": [ { "type": "atLeast", "field": "selections", "scope": "self", "childId": "x", "value": 1 } ] } ] }
+          ] }
+      ],
+      "entryLinks": [ { "id": "l-x", "name": "Guards", "type": "selectionEntry", "targetId": "u-x" } ] } }
+    """;
+
+    [Fact]
+    public void Links_hidden_until_something_is_attached_are_left_out_but_links_hidden_by_a_selection_stay()
+    {
+        var db = Fixtures.Db(("Game.json", Fixtures.GameSystem), ("X.json", Catalogue));
+        var resolved = new RosterResolver(db).Resolve("X.json").Single();
+        var unit = new UnitExtractor(db).Extract(resolved, new HashSet<string>(), []);
+        Assert.DoesNotContain(unit.CoreAbilities, a => a.StartsWith("Feel No Pain"));
+        Assert.Contains("Deadly Demise", unit.CoreAbilities);
+    }
+}
