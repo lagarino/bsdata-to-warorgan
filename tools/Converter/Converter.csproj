@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>WarOrganConverter</RootNamespace>
     <AssemblyName>warorgan-converter</AssemblyName>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <!-- The commit of WarOrgan.Data a release was built from (set by the release workflow). -->
     <InformationalVersion Condition="'$(WarOrganDataCommit)' != ''">$(Version)+warorgan-data.$(WarOrganDataCommit)</InformationalVersion>
     <!-- Where WarOrgan.Data (https://github.com/zenchovey/WarOrgan.Data, MIT) is checked out: the git submodule in external/ when it has

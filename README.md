@@ -206,7 +206,8 @@ The analysis was done against one community catalogue set; the documents describ
 
 | Input | Version examined |
 | --- | --- |
-| BSData catalogue set | commit `11ad64c81c058e5deeccd1cb23e64a972029c7b0` (2026-11-06), game system revision 18 |
+| BSData catalogue set (analysed, numbers in the docs) | commit `11ad64c81c058e5deeccd1cb23e64a972029c7b0` (2026-11-06), game system revision 18 |
+| BSData catalogue set (last converted and tested) | commit `7eb33b245c76384188490998e68487adcf81aca1` (2026-11-10), game system revision 18 |
 | Installed WarOrgan app | exe file version 1.3.0, embedded model identical to the repo model, `DataSetFormatVersion` 1 |
 | WarOrgan.Data | commit `45f934b8efcf4c988cd2cfd124458d78f09920c7`, `DataSetFormatVersion` = 1 |
 
