@@ -33,6 +33,22 @@ public sealed class WargearExtractor(BsdDatabase db)
             if (gear.InitialWargear.Count > 0 || gear.Options.Count > 0) model.Wargear.Add(gear);
         }
 
+        // Gear offered by the unit as a whole ("Instrument of Chaos", "Icon") when it has several kinds of model goes to the kind with the
+        // most models: a leader or sergeant of one is not the model that carries it.
+        if (comp.Models.Count > 1)
+        {
+            var unitGear = new ModelWargear();
+            Map(unitEntry, unitGear, unit, unitName, warnings, skipModels: true);
+            if (unitGear.InitialWargear.Count > 0 || unitGear.Options.Count > 0)
+            {
+                var carrier = comp.Models.OrderByDescending(m => m.Limit?.Max ?? 0).First();
+                var target = carrier.Wargear.FirstOrDefault() ?? new ModelWargear();
+                if (carrier.Wargear.Count == 0) carrier.Wargear.Add(target);
+                foreach (var item in unitGear.InitialWargear.Where(i => !target.InitialWargear.Contains(i))) target.InitialWargear.Add(item);
+                target.Options.AddRange(unitGear.Options);
+            }
+        }
+
         // Weapons nobody can select would fail validation; say so.
         var selectable = comp.Models.SelectMany(m => m.Wargear)
             .SelectMany(w => w.InitialWargear.Concat(w.Options.SelectMany(o => o.Options).SelectMany(c => c.Items)))

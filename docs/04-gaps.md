@@ -183,6 +183,11 @@ What is still open:
   list-building limit changes of a detachment, and ally-only prices (G1). The Titans libraries have no faction of their own.
 - **Text markup.** BSData texts use "^^" (keywords) and "**" (emphasis), which the app shows literally. `TextCleaner` removes them from
   every text, description, value and keyword list before the dataset is validated, and turns non-breaking spaces into spaces.
+- **Unit-wide options** (an instrument or icon bearer that the unit as a whole may take) are offered through the kind of model that has
+  most models in the unit; a datasheet with several kinds of model lost them before.
+- **Abilities that a detachment gives** are left out of the unit when the source hides them until the detachment is selected (also when
+  the condition is on the whole roster), and the detachment adds them. **Detachment effects** that change several units in the same way
+  are one effect that names all of them.
 - **Datasheets without a faction category** (some characters) get the keyword of the roster they are listed in.
 - **Sub-factions** [closed for the army families of the first target]. A catalogue whose own datasheets carry a parent faction's keyword
   next to its own (a chapter of a parent army), or that is mostly made of the parent's imported units, lists the parent as an ally

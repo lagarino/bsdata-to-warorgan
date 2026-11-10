@@ -282,6 +282,24 @@ public class IntegrationTests
     }
 
     [IntegrationFact]
+    public void Daemon_units_keep_their_unit_wide_options_and_detachment_abilities_are_merged_across_units()
+    {
+        var settings = new WarOrganConverter.Emit.BuildSettings("Daemon Test", new Version(1, 0, 0, 0), Path.GetTempPath(), ["Chaos Daemons"]);
+        var model = WarOrganConverter.Emit.DatasetBuilder.Build(Database.Value, settings, new WarOrganConverter.Emit.BuildReport());
+        var roster = model.Rosters.Single().Roster;
+        var bloodletters = roster.Units.Single(u => u.Id == "BLOODLETTERS");
+        // Unit-wide options (an instrument, an icon) go to the model kind that has most models, not to the leader.
+        var options = bloodletters.UnitComposition.ModelCompositions.SelectMany(m => m.Wargear).SelectMany(w => w.Options).SelectMany(o => o.Options).SelectMany(c => c.Items);
+        Assert.Contains("instrument of chaos", options);
+        Assert.Contains("daemonic icon", options);
+        // An ability a detachment gives is not part of the unit, and one effect lists every unit that gets it.
+        Assert.DoesNotContain(bloodletters.UnitAbilities, a => a.Title!.Contains("Murderer"));
+        var cowl = roster.Detachments.SelectMany(d => d.Effects).Where(e => e.AddedAbilities?.Any(a => a.Title!.Contains("Murderer")) == true).ToList();
+        Assert.NotEmpty(cowl);
+        Assert.Contains(cowl, e => e.AffectedUnits!.Count > 1 && e.AffectedUnits.Contains("BLOODLETTERS"));
+    }
+
+    [IntegrationFact]
     public void Imported_units_of_other_factions_become_allies_and_validate()
     {
         var settings = new WarOrganConverter.Emit.BuildSettings("Ally Test", new Version(1, 0, 0, 0), Path.GetTempPath(),

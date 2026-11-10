@@ -60,11 +60,28 @@ public sealed class DetachmentEffectExtractor
                 effect.PointsOverride = units[unitIndex].Points.Select(p => new PointsDefinition { UnitCount = p.UnitCount, ModelCount = p.ModelCount, Cost = p.Cost + e.PointsDelta }).ToList();
             if (e.Keywords.Count > 0)
                 effect.DatasheetAdjustments = [new DatasheetAdjustment { Target = DatasheetFeature.Keywords, Type = StatAdjustmentType.Add, Scope = StatAdjustmentScope.Unit, Values = e.Keywords }];
-            byId[detId].Effects.Add(effect);
+            AddMerged(byId[detId], effect);
         }
 
         foreach (var (reason, where) in unsupported.OrderBy(k => k.Key, StringComparer.Ordinal))
             warnings.Add($"detachment effect not converted ({reason}): {string.Join(", ", where.Order().Take(6))}{(where.Count > 6 ? $" and {where.Count - 6} more" : "")}");
+    }
+
+    /// <summary>One effect for all the units that get exactly the same change (an ability a detachment gives several units).</summary>
+    private static void AddMerged(Detachment detachment, DetachmentEffect effect)
+    {
+        string Key(DetachmentEffect e)
+        {
+            var units = e.AffectedUnits;
+            e.AffectedUnits = null;
+            try { return System.Text.Json.JsonSerializer.Serialize(e); }
+            finally { e.AffectedUnits = units; }
+        }
+        var key = Key(effect);
+        var same = detachment.Effects.FirstOrDefault(x => Key(x) == key);
+        if (same is null) { detachment.Effects.Add(effect); return; }
+        foreach (var unit in effect.AffectedUnits ?? [])
+            if (!same.AffectedUnits!.Contains(unit)) same.AffectedUnits.Add(unit);
     }
 
     private void Walk(JsonObject node, JsonObject root, int unitIndex, Unit unit, Dictionary<string, Detachment> byId,

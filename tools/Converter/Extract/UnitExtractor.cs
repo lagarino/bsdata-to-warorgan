@@ -145,7 +145,7 @@ public sealed class UnitExtractor(BsdDatabase db)
     /// </summary>
     private static bool IsHiddenByDefault(JsonObject node) =>
         BsdDatabase.Arr(node, "modifiers").Any(m => BsdDatabase.Str(m, "field") == "hidden" && m["value"]?.ToString() == "true"
-            && (m["conditions"] is not null || m["conditionGroups"] is not null) && Visibility.HoldsWithNothingSelected(m, null) == true);
+            && (m["conditions"] is not null || m["conditionGroups"] is not null) && Visibility.HoldsWithNothingSelected(m, null, rosterSelections: true) == true);
 
     private static string? ProfileText(JsonObject profile) =>
         BsdDatabase.Arr(profile, "characteristics").Select(c => BsdDatabase.Str(c, "$text")).FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));

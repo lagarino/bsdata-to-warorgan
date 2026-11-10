@@ -5,7 +5,8 @@ namespace WarOrganConverter.Resolve;
 
 /// <summary>
 /// Evaluates "hidden" modifiers for a roster with nothing selected: conditions on the primary catalogue are decided by the catalogue
-/// being converted, conditions on selections or associations hold as if nothing were selected, anything else (roster toggles) is unknown.
+/// being converted, conditions on selections or associations hold as if nothing were selected, anything else (roster toggles) is unknown
+/// unless <c>rosterSelections</c> says roster-wide selections (a chosen detachment) count too.
 /// </summary>
 public static class Visibility
 {
@@ -24,7 +25,7 @@ public static class Visibility
     }
 
     /// <summary>Whether the conditions of a node hold when nothing is selected; null when they cannot be told.</summary>
-    public static bool? HoldsWithNothingSelected(JsonObject node, string? primaryCatalogueId)
+    public static bool? HoldsWithNothingSelected(JsonObject node, string? primaryCatalogueId, bool rosterSelections = false)
     {
         var results = new List<bool?>();
         foreach (var c in BsdDatabase.Arr(node, "conditions"))
@@ -39,7 +40,7 @@ public static class Visibility
                 results.Add(type switch { "instanceOf" => isPrimary, "notInstanceOf" => !isPrimary, _ => null });
                 continue;
             }
-            if (scope is "roster" or "primary-catalogue" || field is not ("selections" or "associations") || value is null) { results.Add(null); continue; }
+            if ((scope is "roster" && !rosterSelections) || scope is "primary-catalogue" || field is not ("selections" or "associations") || value is null) { results.Add(null); continue; }
             results.Add(type switch
             {
                 "lessThan" => 0 < value,
@@ -53,7 +54,7 @@ public static class Visibility
                 _ => null,
             });
         }
-        foreach (var g in BsdDatabase.Arr(node, "conditionGroups")) results.Add(HoldsWithNothingSelected(g, primaryCatalogueId));
+        foreach (var g in BsdDatabase.Arr(node, "conditionGroups")) results.Add(HoldsWithNothingSelected(g, primaryCatalogueId, rosterSelections));
         if (results.Count == 0) return null;
         if (BsdDatabase.Str(node, "type") == "or") return results.Any(r => r == true) ? true : results.Any(r => r is null) ? null : false;
         return results.Any(r => r == false) ? false : results.Any(r => r is null) ? null : true;
