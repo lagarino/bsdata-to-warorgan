@@ -88,20 +88,36 @@ repository is safest.
 
 ## 2. How to build it
 
+> **WarOrgan.Data comes as a git submodule.** This repository is not a fork of it and does not hold its code: the folder
+> `external/WarOrgan.Data` points at a fixed commit of [WarOrgan.Data](https://github.com/zenchovey/WarOrgan.Data) (MIT
+> licence), and git fetches it when you ask. Running a release package needs none of this.
+
 Requirements:
 
 - the [.NET 10 SDK](https://dotnet.microsoft.com/download);
-- a checkout of [WarOrgan.Data](https://github.com/zenchovey/WarOrgan.Data) (MIT licence), placed **next to this
-  repository** (so that `..\WarOrgan.Data` exists), or anywhere else if you pass `-p:WarOrganDataPath=<path>`. The tool
-  uses its model and its builder, so it writes exactly what the app expects and runs the same validation.
+- git, to fetch WarOrgan.Data (the tool uses its model and its builder, so it writes exactly what the app expects and runs the
+  same validation).
 
-Build and run the tests:
+Get the code together with WarOrgan.Data, build and run the tests:
 
 ```
-git clone https://github.com/zenchovey/WarOrgan.Data          # once, next to this repo
-dotnet build tools/Converter
-dotnet test tests/Converter.Tests                              # unit tests on synthetic fixtures, no game data needed
+git clone --recurse-submodules https://github.com/lagarino/bsdata-to-warorgan
+cd bsdata-to-warorgan
+dotnet build bsdata-to-warorgan.slnx
+dotnet test bsdata-to-warorgan.slnx                            # unit tests on synthetic fixtures, no game data needed
 ```
+
+If you cloned without `--recurse-submodules` (or downloaded a zip, which leaves the folder empty), fetch it afterwards:
+`git submodule update --init` (in a zip download: clone WarOrgan.Data into `external/WarOrgan.Data`, or anywhere and pass
+`-p:WarOrganDataPath=<path>` to every `dotnet` command). The build finds WarOrgan.Data in `external/WarOrgan.Data`, and if that is
+empty, in a checkout next to this repository (`..\WarOrgan.Data`).
+
+`bsdata-to-warorgan.slnx` is the solution to open in Visual Studio or Rider. It holds the converter, its tests and the two
+WarOrgan.Data projects it uses from the submodule, so nothing has to be added by hand. The same commands work on one project:
+`dotnet build tools/Converter`, `dotnet test tests/Converter.Tests`.
+
+The submodule is pinned: releases and CI build against exactly that commit. To move to a newer WarOrgan.Data, check out the
+newer commit inside `external/WarOrgan.Data`, run the tests, and commit the changed pointer.
 
 The integration tests run too when `BSDATA_SRC` points at a BSData checkout (they are skipped otherwise):
 
@@ -122,7 +138,7 @@ sample dataset that the builder project ships is removed from it.
 
 Releases are built by the GitHub Actions workflow `.github/workflows/release.yml` when a tag such as `v0.1.0` is pushed: it runs the
 unit tests, publishes the three packages and attaches them to a GitHub release. `ci.yml` builds and tests every push. Both build
-against a fixed commit of WarOrgan.Data (the `WARORGAN_DATA_COMMIT` value at the top of the workflows).
+against the commit of WarOrgan.Data that the submodule points at (the release notes name it).
 
 Every phase of the converter ships with tests; see [docs/05-plan](docs/05-plan.md), "Testing policy".
 
@@ -217,6 +233,6 @@ repo); see [docs/07-app-behaviour](docs/07-app-behaviour.md).
 ## 7. Resuming work on the project
 
 1. Read [docs/05-plan](docs/05-plan.md) for the phases and the next piece of work.
-2. Clone the BSData repository you want to convert and `WarOrgan.Data` as siblings of this repo; check out the commit
+2. Clone this repository with `--recurse-submodules` (that fetches `WarOrgan.Data`), and clone the BSData repository you want to convert; check out the commit
    under *Provenance* to reproduce the numbers in the analysis, or re-run `tools/analysis` on newer data.
 3. Install the .NET 10 SDK, then `dotnet test tests/Converter.Tests`.

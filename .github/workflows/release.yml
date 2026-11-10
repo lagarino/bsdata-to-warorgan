@@ -4,9 +4,6 @@ on:
   push:
     tags: ['v*']
 
-env:
-  WARORGAN_DATA_COMMIT: 45f934b8efcf4c988cd2cfd124458d78f09920c7
-
 permissions:
   contents: write
 
@@ -20,21 +17,22 @@ jobs:
           - { rid: osx-arm64, os: macos-latest }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      # WarOrgan.Data comes with the repository as a git submodule, pinned to the commit the release is built against.
       - uses: actions/checkout@v4
         with:
-          repository: zenchovey/WarOrgan.Data
-          ref: ${{ env.WARORGAN_DATA_COMMIT }}
-          path: WarOrgan.Data
+          submodules: true
+      - name: Note the WarOrgan.Data commit
+        shell: bash
+        run: echo "WARORGAN_DATA_COMMIT=$(git rev-parse HEAD:external/WarOrgan.Data)" >> "$GITHUB_ENV"
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
       - name: Test
-        run: dotnet test tests/Converter.Tests -p:WarOrganDataPath=${{ github.workspace }}/WarOrgan.Data
+        run: dotnet test bsdata-to-warorgan.slnx
       - name: Publish
         run: >
           dotnet publish tools/Converter -c Release -r ${{ matrix.rid }} --self-contained
-          -p:PublishSingleFile=true -p:WarOrganDataPath=${{ github.workspace }}/WarOrgan.Data
+          -p:PublishSingleFile=true
           -p:WarOrganDataCommit=${{ env.WARORGAN_DATA_COMMIT }} -o publish
       - name: Archive
         shell: bash
@@ -53,6 +51,9 @@ jobs:
     needs: package
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - name: Note the WarOrgan.Data commit
+        run: echo "WARORGAN_DATA_COMMIT=$(git rev-parse HEAD:external/WarOrgan.Data)" >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v4
         with:
           pattern: package-*

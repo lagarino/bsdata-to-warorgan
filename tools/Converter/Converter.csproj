@@ -10,7 +10,9 @@
     <Version>0.1.0</Version>
     <!-- The commit of WarOrgan.Data a release was built from (set by the release workflow). -->
     <InformationalVersion Condition="'$(WarOrganDataCommit)' != ''">$(Version)+warorgan-data.$(WarOrganDataCommit)</InformationalVersion>
-    <!-- Location of a checkout of https://github.com/zenchovey/WarOrgan.Data (MIT). Override with -p:WarOrganDataPath=... -->
+    <!-- Where WarOrgan.Data (https://github.com/zenchovey/WarOrgan.Data, MIT) is checked out: the git submodule in external/ when it has
+         been fetched, otherwise a checkout next to this repository. Override with -p:WarOrganDataPath=... -->
+    <WarOrganDataPath Condition="'$(WarOrganDataPath)' == '' And Exists('$(MSBuildThisFileDirectory)..\..\external\WarOrgan.Data\WarOrgan.Data.Model')">$(MSBuildThisFileDirectory)..\..\external\WarOrgan.Data</WarOrganDataPath>
     <WarOrganDataPath Condition="'$(WarOrganDataPath)' == ''">$(MSBuildThisFileDirectory)..\..\..\WarOrgan.Data</WarOrganDataPath>
   </PropertyGroup>
 

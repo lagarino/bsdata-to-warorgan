@@ -1,0 +1,3 @@
+[submodule "external/WarOrgan.Data"]
+	path = external/WarOrgan.Data
+	url = https://github.com/zenchovey/WarOrgan.Data

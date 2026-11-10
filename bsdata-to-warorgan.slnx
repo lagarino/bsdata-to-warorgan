@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/Converter.Tests/Converter.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Converter/Converter.csproj" />
+  </Folder>
+  <!-- The WarOrgan.Data git submodule: fetch it once as the README, section 2, describes. -->
+  <Folder Name="/WarOrgan.Data/">
+    <Project Path="external/WarOrgan.Data/WarOrgan.Data.Model/WarOrgan.Data.Model.csproj" />
+    <Project Path="external/WarOrgan.Data/WarOrgan.Data.BuildDataset/WarOrgan.Data.BuildDataset.csproj" />
+  </Folder>
+</Solution>
